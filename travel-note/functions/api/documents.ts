@@ -1,18 +1,24 @@
 import type { Env } from '../types'
 import { jsonError, jsonOk } from '../lib/response'
-import { DOCUMENT_CATEGORIES, isValidCategory } from '../lib/enums'
+import { DOCUMENT_CATEGORIES, isValidCategory, normalizeDocumentCategory } from '../lib/enums'
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const { DB } = context.env
   const category = new URL(context.request.url).searchParams.get('category')
 
   try {
-    const stmt = category
+    const stmt = category === '票券'
       ? DB.prepare(
           `SELECT id, "order", category, title, date_start, date_end, link, note
-           FROM documents WHERE category = ?
+           FROM documents WHERE category IN (?, ?, ?)
            ORDER BY "order" ASC`,
-        ).bind(category)
+        ).bind('票券', 'KKday', 'Klook')
+      : category
+        ? DB.prepare(
+            `SELECT id, "order", category, title, date_start, date_end, link, note
+             FROM documents WHERE category = ?
+             ORDER BY "order" ASC`,
+          ).bind(category)
       : DB.prepare(
           `SELECT id, "order", category, title, date_start, date_end, link, note
            FROM documents
@@ -20,7 +26,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
         )
 
     const { results } = await stmt.all()
-    return jsonOk(results ?? [])
+    return jsonOk((results ?? []).map((row) => ({ ...row, category: normalizeDocumentCategory(row.category) })))
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'query failed', 500)
   }

@@ -1,6 +1,6 @@
 import type { Env } from '../../types'
 import { jsonError, jsonOk } from '../../lib/response'
-import { DOCUMENT_CATEGORIES, isValidCategory } from '../../lib/enums'
+import { DOCUMENT_CATEGORIES, isValidCategory, normalizeDocumentCategory } from '../../lib/enums'
 
 export const onRequestPut: PagesFunction<Env> = async (context) => {
   const { DB } = context.env
@@ -11,7 +11,7 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
     if (!existing) return jsonError('找不到這筆文件', 404)
 
     const body = await context.request.json<Record<string, unknown>>()
-    const category = String(body.category ?? existing.category)
+    const category = String(body.category ?? normalizeDocumentCategory(existing.category))
     const title = String(body.title ?? existing.title)
     if (!category || !title) return jsonError('category 與 title 為必填', 400)
     if (!isValidCategory(category, DOCUMENT_CATEGORIES)) return jsonError(`category 必須是：${DOCUMENT_CATEGORIES.join('、')}`, 400)

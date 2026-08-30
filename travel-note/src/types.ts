@@ -15,7 +15,7 @@ export interface ItineraryItem {
   note: string | null
 }
 
-export type DocumentCategory = '住宿' | '機票' | '交通' | 'KKday' | 'Klook' | '火車' | '簽證' | '其他'
+export type DocumentCategory = '住宿' | '機票' | '交通' | '票券' | '火車' | '簽證' | '其他'
 
 export interface DocumentItem {
   id: string

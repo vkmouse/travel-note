@@ -298,7 +298,7 @@ const SAMPLE_DOCUMENTS = [
   {
     id: 'doc_04',
     order: 4,
-    category: 'KKday',
+    category: '票券',
     title: '澀谷Sky展望台門票',
     date_start: '2026-10-06',
     date_end: '',

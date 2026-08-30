@@ -10,7 +10,7 @@ import { createDocument, deleteDocument, updateDocument } from '../services/api'
 const { items, loading, error, refresh } = useDocuments()
 const formOpen = ref(false); const deleteOpen = ref(false); const editingId = ref<string | null>(null); const deletingId = ref<string | null>(null); const busy = ref(false); const actionError = ref('')
 const fields: DrawerField[] = [
-  { key: 'category', label: '分類', type: 'select', required: true, options: ['住宿', '機票', '交通', 'KKday', 'Klook', '火車', '簽證', '其他'] },
+  { key: 'category', label: '分類', type: 'select', required: true, options: ['住宿', '機票', '交通', '票券', '火車', '簽證', '其他'] },
   { key: 'title', label: '名稱', type: 'text', required: true }, { key: 'date_start', label: '開始日期', type: 'date' },
   { key: 'date_end', label: '結束日期', type: 'date' }, { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea' },
 ]
