@@ -5,7 +5,7 @@ import { useCurrentTravel } from '../composables/useCurrentTravel'
 import Icon from './Icon.vue'
 import DrawerForm, { type DrawerField } from './DrawerForm.vue'
 import DrawerConfirm from './DrawerConfirm.vue'
-import { createTravel, deleteTravel, updateTravel } from '../services/api'
+import { createTravel, deleteTravel, loadSampleTravel, updateTravel } from '../services/api'
 
 const emit = defineEmits<{ picked: [id: string] }>()
 
@@ -17,6 +17,7 @@ const deleteOpen = ref(false)
 const editingId = ref<string | null>(null)
 const deletingId = ref<string | null>(null)
 const busy = ref(false)
+const sampleBusy = ref(false)
 const actionError = ref('')
 
 const fields: DrawerField[] = [
@@ -71,6 +72,21 @@ async function confirmDelete() {
   }
 }
 
+async function loadSample() {
+  sampleBusy.value = true
+  actionError.value = ''
+  try {
+    const result = await loadSampleTravel()
+    selectTravel(result.travel.id)
+    emit('picked', result.travel.id)
+    await refresh()
+  } catch (e) {
+    actionError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    sampleBusy.value = false
+  }
+}
+
 function fmtRange(t: { date_start: string | null; date_end: string | null }) {
   if (!t.date_start) return '尚未設定日期'
   return t.date_end && t.date_end !== t.date_start ? `${t.date_start} – ${t.date_end}` : t.date_start
@@ -106,6 +122,9 @@ function fmtRange(t: { date_start: string | null; date_end: string | null }) {
       </div>
       <div v-else class="empty">
         <p>尚未建立任何旅行</p>
+        <button class="empty-add-btn" :disabled="sampleBusy" @click="loadSample">
+          <Icon name="suitcase" :size="14" />{{ sampleBusy ? '建立中…' : '載入範例行程' }}
+        </button>
       </div>
     </template>
     <button class="travel-add-btn" @click="openCreate"><Icon name="plus" :size="15" />新增旅行</button>

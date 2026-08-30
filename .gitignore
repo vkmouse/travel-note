@@ -8,6 +8,7 @@
 !/travel-note/public/
 !/travel-note/server/
 !/travel-note/src/
+!/travel-note/.dev.vars.example
 !/travel-note/.gitignore
 !/travel-note/env.d.ts
 !/travel-note/index.html

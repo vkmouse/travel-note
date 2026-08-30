@@ -53,6 +53,10 @@ export function deleteTravel(id: string) {
   return mutate<{ id: string }>(`/api/travels/${id}`, 'DELETE', undefined, '刪除旅行失敗')
 }
 
+export function loadSampleTravel(): Promise<{ travel: Travel; inserted: Record<string, number> }> {
+  return mutate<{ travel: Travel; inserted: Record<string, number> }>(`/api/travels/sample`, 'POST', undefined, '建立範例行程失敗')
+}
+
 export function fetchItinerary(travelId: string): Promise<ItineraryItem[]> {
   return getJson(`/api/travels/${travelId}/itinerary`, '無法取得每日行程')
 }
