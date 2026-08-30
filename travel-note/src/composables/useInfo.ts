@@ -1,13 +1,14 @@
-import { computed } from 'vue'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { fetchInfo } from '../services/api'
 
-export function useInfo() {
+export function useInfo(travelId: MaybeRefOrGetter<string | null>) {
   const queryClient = useQueryClient()
 
   const query = useQuery({
-    queryKey: ['info'],
-    queryFn: fetchInfo,
+    queryKey: computed(() => ['info', toValue(travelId)]),
+    queryFn: () => fetchInfo(toValue(travelId) as string),
+    enabled: computed(() => !!toValue(travelId)),
     retry: 1,
   })
 
@@ -20,7 +21,7 @@ export function useInfo() {
   })
 
   function refresh() {
-    queryClient.invalidateQueries({ queryKey: ['info'] })
+    queryClient.invalidateQueries({ queryKey: ['info', toValue(travelId)] })
   }
 
   return { items, loading, error, refresh }

@@ -1,0 +1,208 @@
+<script setup lang="ts">
+import { computed, ref } from 'vue'
+import { useTravels } from '../composables/useTravels'
+import { useCurrentTravel } from '../composables/useCurrentTravel'
+import Icon from './Icon.vue'
+import DrawerForm, { type DrawerField } from './DrawerForm.vue'
+import DrawerConfirm from './DrawerConfirm.vue'
+import { createTravel, deleteTravel, updateTravel } from '../services/api'
+
+const emit = defineEmits<{ picked: [id: string] }>()
+
+const { travels, loading, error, refresh } = useTravels()
+const { currentTravelId, selectTravel, clearTravel } = useCurrentTravel()
+
+const formOpen = ref(false)
+const deleteOpen = ref(false)
+const editingId = ref<string | null>(null)
+const deletingId = ref<string | null>(null)
+const busy = ref(false)
+const actionError = ref('')
+
+const fields: DrawerField[] = [
+  { key: 'title', label: '旅行名稱', type: 'text', required: true },
+  { key: 'date_start', label: '開始日期', type: 'date' },
+  { key: 'date_end', label: '結束日期', type: 'date' },
+]
+
+const formValues = computed(() => travels.value.find((t) => t.id === editingId.value) ?? { title: '' })
+
+function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
+function openEdit(id: string) { editingId.value = id; actionError.value = ''; formOpen.value = true }
+function openDelete(id: string) { deletingId.value = id; actionError.value = ''; deleteOpen.value = true }
+
+function pick(id: string) {
+  selectTravel(id)
+  emit('picked', id)
+}
+
+async function save(values: Record<string, string>) {
+  busy.value = true
+  actionError.value = ''
+  try {
+    if (editingId.value) {
+      await updateTravel(editingId.value, values)
+    } else {
+      const created = await createTravel(values as never)
+      selectTravel(created.id)
+      emit('picked', created.id)
+    }
+    formOpen.value = false
+    await refresh()
+  } catch (e) {
+    actionError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+async function confirmDelete() {
+  if (!deletingId.value) return
+  busy.value = true
+  try {
+    await deleteTravel(deletingId.value)
+    if (currentTravelId.value === deletingId.value) clearTravel()
+    deleteOpen.value = false
+    await refresh()
+  } catch (e) {
+    actionError.value = e instanceof Error ? e.message : String(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+function fmtRange(t: { date_start: string | null; date_end: string | null }) {
+  if (!t.date_start) return '尚未設定日期'
+  return t.date_end && t.date_end !== t.date_start ? `${t.date_start} – ${t.date_end}` : t.date_start
+}
+</script>
+
+<template>
+  <div class="travel-panel">
+    <p v-if="loading" class="state-msg">載入中...</p>
+    <p v-else-if="error" class="state-msg error">{{ error }}</p>
+    <template v-else>
+      <div v-if="travels.length" class="travel-list">
+        <div
+          v-for="t in travels"
+          :key="t.id"
+          class="travel-card"
+          :class="{ active: t.id === currentTravelId }"
+          @click="pick(t.id)"
+        >
+          <div class="travel-card-icon" :class="{ active: t.id === currentTravelId }">
+            <Icon name="suitcase" :size="18" />
+            <span v-if="t.id === currentTravelId" class="travel-card-check"><Icon name="check" :size="10" :stroke-width="3" /></span>
+          </div>
+          <div class="travel-card-body">
+            <p class="travel-card-title">{{ t.title }}</p>
+            <p class="travel-card-range">{{ fmtRange(t) }}</p>
+          </div>
+          <div class="card-actions" @click.stop>
+            <button class="icon-btn" aria-label="編輯" @click="openEdit(t.id)"><Icon name="edit" :size="17" /></button>
+            <button class="icon-btn danger" aria-label="刪除" @click="openDelete(t.id)"><Icon name="trash" :size="17" /></button>
+          </div>
+        </div>
+      </div>
+      <div v-else class="empty">
+        <p>尚未建立任何旅行</p>
+      </div>
+    </template>
+    <button class="travel-add-btn" @click="openCreate"><Icon name="plus" :size="15" />新增旅行</button>
+    <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
+
+    <DrawerForm :open="formOpen" :title="editingId ? '編輯旅行' : '新增旅行'" size="sm" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
+    <DrawerConfirm :open="deleteOpen" :title="`刪除「${travels.find((t) => t.id === deletingId)?.title ?? '這趟旅行'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
+  </div>
+</template>
+
+<style scoped>
+.travel-panel {
+  display: flex;
+  flex-direction: column;
+}
+.travel-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.travel-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 12px 8px 12px 12px;
+  cursor: pointer;
+}
+.travel-card.active {
+  border-color: var(--brass);
+}
+.travel-card-icon {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brass);
+  flex-shrink: 0;
+}
+.travel-card-icon.active {
+  background: var(--brass);
+  color: #fff;
+}
+.travel-card-check {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--brass);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--card);
+}
+.travel-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.travel-card-title {
+  font-weight: 600;
+  font-size: 14.5px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.travel-card-range {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin: 3px 0 0;
+}
+.travel-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 46px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.travel-add-btn:active {
+  background: var(--paper);
+}
+</style>

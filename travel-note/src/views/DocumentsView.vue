@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useDocuments } from '../composables/useDocuments'
+import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { CATEGORY_ICON } from '../icons'
 import Icon from '../components/Icon.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createDocument, deleteDocument, updateDocument } from '../services/api'
 
-const { items, loading, error, refresh } = useDocuments()
+const { currentTravelId } = useCurrentTravel()
+const { items, loading, error, refresh } = useDocuments(currentTravelId)
 const formOpen = ref(false); const deleteOpen = ref(false); const editingId = ref<string | null>(null); const deletingId = ref<string | null>(null); const busy = ref(false); const actionError = ref('')
 const fields: DrawerField[] = [
   { key: 'category', label: '分類', type: 'select', required: true, options: ['住宿', '機票', '交通', '票券', '火車', '簽證', '其他'] },
@@ -18,8 +20,8 @@ const formValues = computed(() => items.value.find((i) => i.id === editingId.val
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
 function openEdit(id: string) { editingId.value = id; actionError.value = ''; formOpen.value = true }
 function openDelete(id: string) { deletingId.value = id; actionError.value = ''; deleteOpen.value = true }
-async function save(values: Record<string, string>) { busy.value = true; try { if (editingId.value) await updateDocument(editingId.value, values); else await createDocument(values as never); formOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
-async function confirmDelete() { if (!deletingId.value) return; busy.value = true; try { await deleteDocument(deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function save(values: Record<string, string>) { if (!currentTravelId.value) return; busy.value = true; try { if (editingId.value) await updateDocument(currentTravelId.value, editingId.value, values); else await createDocument(currentTravelId.value, values as never); formOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function confirmDelete() { if (!deletingId.value || !currentTravelId.value) return; busy.value = true; try { await deleteDocument(currentTravelId.value, deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 
 const categories = computed(() => ['全部', ...new Set(items.value.map((d) => d.category))])
 const activeCategory = ref('全部')

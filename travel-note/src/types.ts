@@ -4,6 +4,14 @@ export interface ApiResponse<T> {
   error?: string
 }
 
+export interface Travel {
+  id: string
+  title: string
+  date_start: string | null
+  date_end: string | null
+  order: number
+}
+
 export interface ItineraryItem {
   id: string
   order: number

@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useInfo } from '../composables/useInfo'
+import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { CATEGORY_ICON } from '../icons'
 import Icon from '../components/Icon.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createInfo, deleteInfo, patchInfoChecked, updateInfo } from '../services/api'
 
-const { items, loading, error, refresh } = useInfo()
+const { currentTravelId } = useCurrentTravel()
+const { items, loading, error, refresh } = useInfo(currentTravelId)
 const formOpen = ref(false); const deleteOpen = ref(false); const editingId = ref<string | null>(null); const deletingId = ref<string | null>(null); const busy = ref(false); const actionError = ref('')
 const fields: DrawerField[] = [
   { key: 'category', label: '分類', type: 'select', required: true, options: ['工具', '靈感', '緊急聯絡'] },
@@ -17,9 +19,9 @@ const formValues = computed(() => items.value.find((i) => i.id === editingId.val
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
 function openEdit(id: string) { editingId.value = id; actionError.value = ''; formOpen.value = true }
 function openDelete(id: string) { deletingId.value = id; actionError.value = ''; deleteOpen.value = true }
-async function save(values: Record<string, string>) { busy.value = true; try { if (editingId.value) await updateInfo(editingId.value, values); else await createInfo(values as never); formOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
-async function toggle(item: (typeof items.value)[number]) { busy.value = true; try { await patchInfoChecked(item.id, !item.is_checked); await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
-async function confirmDelete() { if (!deletingId.value) return; busy.value = true; try { await deleteInfo(deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function save(values: Record<string, string>) { if (!currentTravelId.value) return; busy.value = true; try { if (editingId.value) await updateInfo(currentTravelId.value, editingId.value, values); else await createInfo(currentTravelId.value, values as never); formOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function toggle(item: (typeof items.value)[number]) { if (!currentTravelId.value) return; busy.value = true; try { await patchInfoChecked(currentTravelId.value, item.id, !item.is_checked); await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function confirmDelete() { if (!deletingId.value || !currentTravelId.value) return; busy.value = true; try { await deleteInfo(currentTravelId.value, deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 
 const categories = computed(() => ['全部', ...new Set(items.value.map((i) => i.category))])
 const activeCategory = ref('全部')

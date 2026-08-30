@@ -1,13 +1,14 @@
-import { computed } from 'vue'
+import { computed, toValue, type MaybeRefOrGetter } from 'vue'
 import { useQuery, useQueryClient } from '@tanstack/vue-query'
 import { fetchItinerary } from '../services/api'
 
-export function useItinerary() {
+export function useItinerary(travelId: MaybeRefOrGetter<string | null>) {
   const queryClient = useQueryClient()
 
   const query = useQuery({
-    queryKey: ['itinerary'],
-    queryFn: fetchItinerary,
+    queryKey: computed(() => ['itinerary', toValue(travelId)]),
+    queryFn: () => fetchItinerary(toValue(travelId) as string),
+    enabled: computed(() => !!toValue(travelId)),
     retry: 1,
   })
 
@@ -20,7 +21,7 @@ export function useItinerary() {
   })
 
   function refresh() {
-    queryClient.invalidateQueries({ queryKey: ['itinerary'] })
+    queryClient.invalidateQueries({ queryKey: ['itinerary', toValue(travelId)] })
   }
 
   return { items, loading, error, refresh }

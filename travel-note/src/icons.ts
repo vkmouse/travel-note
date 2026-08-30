@@ -28,6 +28,7 @@ export const ICONS: Record<string, string> = {
     '<rect x="2.5" y="5.5" width="19" height="13" rx="2"/><circle cx="8.3" cy="12" r="2"/><path d="M6 15.8c.5-1.3 1.5-2.1 2.3-2.1s1.8.8 2.3 2.1M14.5 9.5h5M14.5 12.5h5M14.5 15.5h3"/>',
   plug: '<path d="M9 2v5M15 2v5M7.5 7h9v3a4.5 4.5 0 0 1-9 0z"/><path d="M12 14v4M9 21h6"/>',
   pill: '<path d="M4.7 14.8l5.6-5.6a4.1 4.1 0 1 1 5.8 5.8l-5.6 5.6a4.1 4.1 0 0 1-5.8-5.8z"/><path d="M8.7 8.7l6.6 6.6"/>',
+  suitcase: '<rect x="3" y="7" width="18" height="13" rx="2.2"/><path d="M8.5 7V5.3A1.8 1.8 0 0 1 10.3 3.5h3.4A1.8 1.8 0 0 1 15.5 5.3V7"/><path d="M3 12.5h18"/>',
 }
 
 export const ICONS_FILLED: Record<string, string> = {

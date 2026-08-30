@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useItinerary } from '../composables/useItinerary'
+import { useCurrentTravel } from '../composables/useCurrentTravel'
 import Icon from '../components/Icon.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createItinerary, deleteItinerary, updateItinerary } from '../services/api'
 
-const { items, loading, error, refresh } = useItinerary()
+const { currentTravelId } = useCurrentTravel()
+const { items, loading, error, refresh } = useItinerary(currentTravelId)
 const formOpen = ref(false)
 const deleteOpen = ref(false)
 const editingId = ref<string | null>(null)
@@ -22,8 +24,8 @@ const formValues = computed(() => items.value.find((i) => i.id === editingId.val
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
 function openEdit(id: string) { editingId.value = id; actionError.value = ''; formOpen.value = true }
 function openDelete(id: string) { deletingId.value = id; actionError.value = ''; deleteOpen.value = true }
-async function save(values: Record<string, string>) { busy.value = true; actionError.value = ''; try { if (editingId.value) await updateItinerary(editingId.value, values); else await createItinerary(values as never); formOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
-async function confirmDelete() { if (!deletingId.value) return; busy.value = true; try { await deleteItinerary(deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function save(values: Record<string, string>) { if (!currentTravelId.value) return; busy.value = true; actionError.value = ''; try { if (editingId.value) await updateItinerary(currentTravelId.value, editingId.value, values); else await createItinerary(currentTravelId.value, values as never); formOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function confirmDelete() { if (!deletingId.value || !currentTravelId.value) return; busy.value = true; try { await deleteItinerary(currentTravelId.value, deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 
 const days = computed(() => [...new Set(items.value.map((i) => i.date))].sort())
 const activeDay = ref<string | null>(null)
