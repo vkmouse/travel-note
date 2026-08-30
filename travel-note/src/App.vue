@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import Icon from './components/Icon.vue'
+import AccessGate from './components/AccessGate.vue'
+import { useQueryClient } from '@tanstack/vue-query'
 
 const route = useRoute()
+const queryClient = useQueryClient()
+
+function handleAuthenticated() {
+  queryClient.invalidateQueries()
+}
 
 const TABS = [
   { to: '/itinerary', name: 'itinerary', label: '每日行程', icon: 'calendar' },
@@ -13,6 +20,7 @@ const TABS = [
 </script>
 
 <template>
+  <AccessGate @authenticated="handleAuthenticated">
   <div class="app">
     <header>
       <p class="trip-title">旅遊手札 Travel Note</p>
@@ -36,6 +44,7 @@ const TABS = [
       </RouterLink>
     </nav>
   </div>
+  </AccessGate>
 </template>
 
 <style scoped>

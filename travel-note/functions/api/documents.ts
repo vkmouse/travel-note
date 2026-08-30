@@ -1,29 +1,30 @@
-import type { Env } from '../types'
+import type { AuthContext, Env } from '../types'
 import { jsonError, jsonOk } from '../lib/response'
 import { DOCUMENT_CATEGORIES, isValidCategory, normalizeDocumentCategory } from '../lib/enums'
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
+export const onRequestGet: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
+  const userId = context.data.userId
   const category = new URL(context.request.url).searchParams.get('category')
 
   try {
     const stmt = category === '票券'
       ? DB.prepare(
           `SELECT id, "order", category, title, date_start, date_end, link, note
-           FROM documents WHERE category IN (?, ?, ?)
+           FROM documents WHERE user_id = ? AND category IN (?, ?, ?)
            ORDER BY "order" ASC`,
-        ).bind('票券', 'KKday', 'Klook')
+        ).bind(userId, '票券', 'KKday', 'Klook')
       : category
         ? DB.prepare(
             `SELECT id, "order", category, title, date_start, date_end, link, note
-             FROM documents WHERE category = ?
+             FROM documents WHERE user_id = ? AND category = ?
              ORDER BY "order" ASC`,
-          ).bind(category)
+          ).bind(userId, category)
       : DB.prepare(
           `SELECT id, "order", category, title, date_start, date_end, link, note
-           FROM documents
+           FROM documents WHERE user_id = ?
            ORDER BY "order" ASC`,
-        )
+        ).bind(userId)
 
     const { results } = await stmt.all()
     return jsonOk((results ?? []).map((row) => ({ ...row, category: normalizeDocumentCategory(row.category) })))
@@ -32,8 +33,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 }
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
+export const onRequestPost: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
+  const userId = context.data.userId
 
   try {
     const body = await context.request.json<Record<string, unknown>>()
@@ -48,16 +50,16 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const note = String(body.note ?? '')
 
     const { results } = await DB.prepare(
-      `SELECT COALESCE(MAX("order"), 0) + 1 AS next_order FROM documents`,
-    ).all<{ next_order: number }>()
+      `SELECT COALESCE(MAX("order"), 0) + 1 AS next_order FROM documents WHERE user_id = ?`,
+    ).bind(userId).all<{ next_order: number }>()
     const order = results?.[0]?.next_order ?? 1
 
     const id = `doc_${crypto.randomUUID().slice(0, 8)}`
     await DB.prepare(
-      `INSERT INTO documents (id, "order", category, title, date_start, date_end, link, note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO documents (id, user_id, "order", category, title, date_start, date_end, link, note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-      .bind(id, order, category, title, date_start, date_end, link, note)
+      .bind(id, userId, order, category, title, date_start, date_end, link, note)
       .run()
 
     return jsonOk({ id, order, category, title, date_start, date_end, link, note })

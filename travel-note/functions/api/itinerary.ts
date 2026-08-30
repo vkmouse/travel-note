@@ -1,15 +1,16 @@
-import type { Env } from '../types'
+import type { AuthContext, Env } from '../types'
 import { jsonError, jsonOk } from '../lib/response'
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
+export const onRequestGet: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
+  const userId = context.data.userId
 
   try {
     const { results } = await DB.prepare(
       `SELECT id, "order", date, time, title, location, map_url, note
-       FROM itinerary
+       FROM itinerary WHERE user_id = ?
        ORDER BY date ASC, "order" ASC`,
-    ).all()
+    ).bind(userId).all()
 
     return jsonOk(results ?? [])
   } catch (err) {
@@ -17,8 +18,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 }
 
-export const onRequestPost: PagesFunction<Env> = async (context) => {
+export const onRequestPost: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
+  const userId = context.data.userId
 
   try {
     const body = await context.request.json<Record<string, unknown>>()
@@ -33,18 +35,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     // order 只在同一天內排序，所以用該天現有的最大值 +1，而不是整張表的筆數
     const { results } = await DB.prepare(
-      `SELECT COALESCE(MAX("order"), 0) + 1 AS next_order FROM itinerary WHERE date = ?`,
+      `SELECT COALESCE(MAX("order"), 0) + 1 AS next_order FROM itinerary WHERE user_id = ? AND date = ?`,
     )
-      .bind(date)
+      .bind(userId, date)
       .all<{ next_order: number }>()
     const order = results?.[0]?.next_order ?? 1
 
     const id = `it_${crypto.randomUUID().slice(0, 8)}`
     await DB.prepare(
-      `INSERT INTO itinerary (id, "order", date, time, title, location, map_url, note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO itinerary (id, user_id, "order", date, time, title, location, map_url, note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-      .bind(id, order, date, time, title, location, map_url, note)
+      .bind(id, userId, order, date, time, title, location, map_url, note)
       .run()
 
     return jsonOk({ id, order, date, time, title, location, map_url, note })

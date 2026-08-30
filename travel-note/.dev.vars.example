@@ -1,0 +1,4 @@
+# Local development only. Never use DEV_AUTH_BYPASS in production.
+APP_JWT_SECRET=replace-with-a-local-secret
+DEV_AUTH_BYPASS=true
+DEV_AUTH_USERS={"local-a":{"email":"a@example.com","secret":"local-a-secret"},"local-b":{"email":"b@example.com","secret":"local-b-secret"}}

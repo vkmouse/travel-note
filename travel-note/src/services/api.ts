@@ -1,7 +1,19 @@
 import type { ApiResponse, ChecklistItem, DocumentItem, InfoItem, ItineraryItem } from '../types'
+import { getAccessHeaders, refreshAccessToken } from './auth'
+
+async function authorizedFetch(url: string, init: RequestInit = {}) {
+  const request = () => fetch(url, {
+    ...init,
+    credentials: 'include',
+    headers: { ...getAccessHeaders(), ...(init.headers ?? {}) },
+  })
+  let response = await request()
+  if (response.status === 401 && await refreshAccessToken()) response = await request()
+  return response
+}
 
 async function getJson<T>(url: string, errorLabel: string): Promise<T> {
-  const res = await fetch(url)
+  const res = await authorizedFetch(url)
   if (!res.ok) {
     throw new Error(`${errorLabel}（${res.status}）`)
   }
@@ -13,13 +25,14 @@ async function getJson<T>(url: string, errorLabel: string): Promise<T> {
 }
 
 async function sendJson<T>(url: string, method: 'POST' | 'PUT' | 'PATCH' | 'DELETE', payload: unknown, errorLabel: string): Promise<T> {
-  const res = await fetch(url, {
+  const res = await authorizedFetch(url, {
     method,
     headers: { 'Content-Type': 'application/json' },
     body: method === 'DELETE' ? undefined : JSON.stringify(payload),
   })
+  if (!res.ok) throw new Error(`${errorLabel}（${res.status}）`)
   const body = (await res.json()) as ApiResponse<T>
-  if (!res.ok || !body.success) throw new Error(body.error ?? `${errorLabel}（${res.status}）`)
+  if (!body.success) throw new Error(body.error ?? errorLabel)
   return body.data
 }
 

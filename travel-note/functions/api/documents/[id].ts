@@ -1,13 +1,14 @@
-import type { Env } from '../../types'
+import type { AuthContext, Env } from '../../types'
 import { jsonError, jsonOk } from '../../lib/response'
 import { DOCUMENT_CATEGORIES, isValidCategory, normalizeDocumentCategory } from '../../lib/enums'
 
-export const onRequestPut: PagesFunction<Env> = async (context) => {
+export const onRequestPut: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
+  const userId = context.data.userId
   const id = context.params.id as string
 
   try {
-    const existing = await DB.prepare(`SELECT * FROM documents WHERE id = ?`).bind(id).first<Record<string, unknown>>()
+    const existing = await DB.prepare(`SELECT * FROM documents WHERE id = ? AND user_id = ?`).bind(id, userId).first<Record<string, unknown>>()
     if (!existing) return jsonError('找不到這筆文件', 404)
 
     const body = await context.request.json<Record<string, unknown>>()
@@ -22,9 +23,9 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
     const note = String(body.note ?? existing.note ?? '')
 
     await DB.prepare(
-      `UPDATE documents SET category = ?, title = ?, date_start = ?, date_end = ?, link = ?, note = ? WHERE id = ?`,
+      `UPDATE documents SET category = ?, title = ?, date_start = ?, date_end = ?, link = ?, note = ? WHERE id = ? AND user_id = ?`,
     )
-      .bind(category, title, date_start, date_end, link, note, id)
+      .bind(category, title, date_start, date_end, link, note, id, userId)
       .run()
 
     return jsonOk({ id, order: existing.order, category, title, date_start, date_end, link, note })
@@ -33,12 +34,13 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
   }
 }
 
-export const onRequestDelete: PagesFunction<Env> = async (context) => {
+export const onRequestDelete: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
+  const userId = context.data.userId
   const id = context.params.id as string
 
   try {
-    await DB.prepare(`DELETE FROM documents WHERE id = ?`).bind(id).run()
+    await DB.prepare(`DELETE FROM documents WHERE id = ? AND user_id = ?`).bind(id, userId).run()
     return jsonOk({ id })
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'delete failed', 500)

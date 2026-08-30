@@ -1,4 +1,4 @@
-import type { Env } from '../types'
+import type { AuthContext, Env } from '../types'
 import { jsonError, jsonOk } from '../lib/response'
 
 const SAMPLE_ITINERARY = [
@@ -427,34 +427,35 @@ const SAMPLE_CHECKLIST = [
   },
 ]
 
-export const onRequestGet: PagesFunction<Env> = async (context) => {
+export const onRequestGet: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
+  const userId = context.data.userId
 
   try {
     const statements = [
       ...SAMPLE_ITINERARY.map((it) =>
         DB.prepare(
-          `INSERT OR REPLACE INTO itinerary (id, "order", date, time, title, location, map_url, note)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).bind(it.id, it.order, it.date, it.time, it.title, it.location, it.map_url, it.note),
+          `INSERT OR REPLACE INTO itinerary (id, user_id, "order", date, time, title, location, map_url, note)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).bind(`${userId}_${it.id}`, userId, it.order, it.date, it.time, it.title, it.location, it.map_url, it.note),
       ),
       ...SAMPLE_DOCUMENTS.map((doc) =>
         DB.prepare(
-          `INSERT OR REPLACE INTO documents (id, "order", category, title, date_start, date_end, link, note)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).bind(doc.id, doc.order, doc.category, doc.title, doc.date_start, doc.date_end, doc.link, doc.note),
+          `INSERT OR REPLACE INTO documents (id, user_id, "order", category, title, date_start, date_end, link, note)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).bind(`${userId}_${doc.id}`, userId, doc.order, doc.category, doc.title, doc.date_start, doc.date_end, doc.link, doc.note),
       ),
       ...SAMPLE_INFO.map((info) =>
         DB.prepare(
-          `INSERT OR REPLACE INTO info (id, "order", category, title, link, note, is_checked)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        ).bind(info.id, info.order, info.category, info.title, info.link, info.note, info.is_checked ? 1 : 0),
+          `INSERT OR REPLACE INTO info (id, user_id, "order", category, title, link, note, is_checked)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        ).bind(`${userId}_${info.id}`, userId, info.order, info.category, info.title, info.link, info.note, info.is_checked ? 1 : 0),
       ),
       ...SAMPLE_CHECKLIST.map((chk) =>
         DB.prepare(
-          `INSERT OR REPLACE INTO checklist (id, "order", category, title, note, is_checked)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-        ).bind(chk.id, chk.order, chk.category, chk.title, chk.note, chk.is_checked ? 1 : 0),
+          `INSERT OR REPLACE INTO checklist (id, user_id, "order", category, title, note, is_checked)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        ).bind(`${userId}_${chk.id}`, userId, chk.order, chk.category, chk.title, chk.note, chk.is_checked ? 1 : 0),
       ),
     ]
 

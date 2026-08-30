@@ -1,13 +1,14 @@
-import type { Env } from '../../types'
+import type { AuthContext, Env } from '../../types'
 import { jsonError, jsonOk } from '../../lib/response'
 import { INFO_CATEGORIES, isValidCategory } from '../../lib/enums'
 
-export const onRequestPut: PagesFunction<Env> = async (context) => {
+export const onRequestPut: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
+  const userId = context.data.userId
   const id = context.params.id as string
 
   try {
-    const existing = await DB.prepare(`SELECT * FROM info WHERE id = ?`).bind(id).first<Record<string, unknown>>()
+    const existing = await DB.prepare(`SELECT * FROM info WHERE id = ? AND user_id = ?`).bind(id, userId).first<Record<string, unknown>>()
     if (!existing) return jsonError('找不到這筆資訊', 404)
 
     const body = await context.request.json<Record<string, unknown>>()
@@ -19,8 +20,8 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
     const link = String(body.link ?? existing.link ?? '')
     const note = String(body.note ?? existing.note ?? '')
 
-    await DB.prepare(`UPDATE info SET category = ?, title = ?, link = ?, note = ? WHERE id = ?`)
-      .bind(category, title, link, note, id)
+    await DB.prepare(`UPDATE info SET category = ?, title = ?, link = ?, note = ? WHERE id = ? AND user_id = ?`)
+      .bind(category, title, link, note, id, userId)
       .run()
 
     return jsonOk({
@@ -37,16 +38,17 @@ export const onRequestPut: PagesFunction<Env> = async (context) => {
   }
 }
 
-export const onRequestPatch: PagesFunction<Env> = async (context) => {
+export const onRequestPatch: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
+  const userId = context.data.userId
   const id = context.params.id as string
 
   try {
     const body = await context.request.json<Record<string, unknown>>()
     if (typeof body.is_checked !== 'boolean') return jsonError('is_checked 必須是 boolean', 400)
-    const existing = await DB.prepare(`SELECT * FROM info WHERE id = ?`).bind(id).first<Record<string, unknown>>()
+    const existing = await DB.prepare(`SELECT * FROM info WHERE id = ? AND user_id = ?`).bind(id, userId).first<Record<string, unknown>>()
     if (!existing) return jsonError('找不到這筆資訊', 404)
-    await DB.prepare(`UPDATE info SET is_checked = ? WHERE id = ?`).bind(body.is_checked ? 1 : 0, id).run()
+    await DB.prepare(`UPDATE info SET is_checked = ? WHERE id = ? AND user_id = ?`).bind(body.is_checked ? 1 : 0, id, userId).run()
     return jsonOk({
       id,
       order: existing.order,
@@ -61,12 +63,13 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
   }
 }
 
-export const onRequestDelete: PagesFunction<Env> = async (context) => {
+export const onRequestDelete: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
+  const userId = context.data.userId
   const id = context.params.id as string
 
   try {
-    await DB.prepare(`DELETE FROM info WHERE id = ?`).bind(id).run()
+    await DB.prepare(`DELETE FROM info WHERE id = ? AND user_id = ?`).bind(id, userId).run()
     return jsonOk({ id })
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'delete failed', 500)
