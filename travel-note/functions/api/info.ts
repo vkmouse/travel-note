@@ -25,3 +25,34 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     return jsonError(err instanceof Error ? err.message : 'query failed', 500)
   }
 }
+
+export const onRequestPost: PagesFunction<Env> = async (context) => {
+  const { DB } = context.env
+
+  try {
+    const body = await context.request.json<Record<string, unknown>>()
+    const category = String(body.category ?? '').trim()
+    const title = String(body.title ?? '').trim()
+    if (!category || !title) return jsonError('category 與 title 為必填', 400)
+
+    const link = String(body.link ?? '')
+    const note = String(body.note ?? '')
+
+    const { results } = await DB.prepare(
+      `SELECT COALESCE(MAX("order"), 0) + 1 AS next_order FROM info`,
+    ).all<{ next_order: number }>()
+    const order = results?.[0]?.next_order ?? 1
+
+    const id = `info_${crypto.randomUUID().slice(0, 8)}`
+    await DB.prepare(
+      `INSERT INTO info (id, "order", category, title, link, note, is_checked)
+       VALUES (?, ?, ?, ?, ?, ?, 0)`,
+    )
+      .bind(id, order, category, title, link, note)
+      .run()
+
+    return jsonOk({ id, order, category, title, link, note, is_checked: false })
+  } catch (err) {
+    return jsonError(err instanceof Error ? err.message : 'create failed', 500)
+  }
+}
