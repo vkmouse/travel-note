@@ -12,3 +12,7 @@ export interface AuthContext extends Record<string, unknown> {
   email: string
   userId: string
 }
+
+export interface TravelAuthContext extends AuthContext {
+  travelId: string
+}

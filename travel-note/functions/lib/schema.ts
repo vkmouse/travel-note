@@ -4,8 +4,18 @@ export const CREATE_TABLE_STATEMENTS = [
     email TEXT NOT NULL UNIQUE,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
+  `CREATE TABLE IF NOT EXISTS travels (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    title TEXT NOT NULL,
+    date_start TEXT,
+    date_end TEXT,
+    "order" INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
   `CREATE TABLE IF NOT EXISTS itinerary (
     id TEXT PRIMARY KEY,
+    travel_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     "order" INTEGER NOT NULL,
     date TEXT NOT NULL,
@@ -17,6 +27,7 @@ export const CREATE_TABLE_STATEMENTS = [
   )`,
   `CREATE TABLE IF NOT EXISTS documents (
     id TEXT PRIMARY KEY,
+    travel_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     "order" INTEGER NOT NULL,
     category TEXT NOT NULL,
@@ -28,6 +39,7 @@ export const CREATE_TABLE_STATEMENTS = [
   )`,
   `CREATE TABLE IF NOT EXISTS info (
     id TEXT PRIMARY KEY,
+    travel_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     "order" INTEGER NOT NULL,
     category TEXT NOT NULL,
@@ -38,6 +50,7 @@ export const CREATE_TABLE_STATEMENTS = [
   )`,
   `CREATE TABLE IF NOT EXISTS checklist (
     id TEXT PRIMARY KEY,
+    travel_id TEXT NOT NULL,
     user_id TEXT NOT NULL,
     "order" INTEGER NOT NULL,
     category TEXT,
@@ -45,8 +58,9 @@ export const CREATE_TABLE_STATEMENTS = [
     note TEXT,
     is_checked INTEGER NOT NULL DEFAULT 0
   )`,
-  `CREATE INDEX IF NOT EXISTS itinerary_user_date_idx ON itinerary(user_id, date, "order")`,
-  `CREATE INDEX IF NOT EXISTS documents_user_order_idx ON documents(user_id, "order")`,
-  `CREATE INDEX IF NOT EXISTS info_user_order_idx ON info(user_id, "order")`,
-  `CREATE INDEX IF NOT EXISTS checklist_user_order_idx ON checklist(user_id, "order")`,
+  `CREATE INDEX IF NOT EXISTS travels_user_order_idx ON travels(user_id, "order")`,
+  `CREATE INDEX IF NOT EXISTS itinerary_travel_date_idx ON itinerary(travel_id, date, "order")`,
+  `CREATE INDEX IF NOT EXISTS documents_travel_order_idx ON documents(travel_id, "order")`,
+  `CREATE INDEX IF NOT EXISTS info_travel_order_idx ON info(travel_id, "order")`,
+  `CREATE INDEX IF NOT EXISTS checklist_travel_order_idx ON checklist(travel_id, "order")`,
 ]
