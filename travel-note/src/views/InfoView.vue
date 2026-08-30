@@ -3,8 +3,23 @@ import { computed, ref } from 'vue'
 import { useInfo } from '../composables/useInfo'
 import { CATEGORY_ICON } from '../icons'
 import Icon from '../components/Icon.vue'
+import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
+import DrawerConfirm from '../components/DrawerConfirm.vue'
+import { createInfo, deleteInfo, patchInfoChecked, updateInfo } from '../services/api'
 
-const { items, loading, error } = useInfo()
+const { items, loading, error, refresh } = useInfo()
+const formOpen = ref(false); const deleteOpen = ref(false); const editingId = ref<string | null>(null); const deletingId = ref<string | null>(null); const busy = ref(false); const actionError = ref('')
+const fields: DrawerField[] = [
+  { key: 'category', label: '分類', type: 'select', required: true, options: ['工具', '靈感', '緊急聯絡'] },
+  { key: 'title', label: '標題', type: 'text', required: true }, { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea' },
+]
+const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0].options?.[0] })
+function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
+function openEdit(id: string) { editingId.value = id; actionError.value = ''; formOpen.value = true }
+function openDelete(id: string) { deletingId.value = id; actionError.value = ''; deleteOpen.value = true }
+async function save(values: Record<string, string>) { busy.value = true; try { if (editingId.value) await updateInfo(editingId.value, values); else await createInfo(values as never); formOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function toggle(item: (typeof items.value)[number]) { busy.value = true; try { await patchInfoChecked(item.id, !item.is_checked); await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function confirmDelete() { if (!deletingId.value) return; busy.value = true; try { await deleteInfo(deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 
 const categories = computed(() => ['全部', ...new Set(items.value.map((i) => i.category))])
 const activeCategory = ref('全部')
@@ -48,11 +63,11 @@ const grouped = computed(() => {
             {{ group.category }}
           </div>
           <div v-for="item in group.rows" :key="item.id" class="info-row">
-            <div class="check-dot-static">
+            <button class="check-dot-btn" aria-label="切換完成狀態" @click="toggle(item)">
               <div class="check-dot" :class="{ checked: item.is_checked }">
                 <Icon v-if="item.is_checked" name="check" :size="15" :stroke-width="2.6" />
               </div>
-            </div>
+            </button>
             <div class="info-body">
               <p class="info-title" :class="{ done: item.is_checked }">{{ item.title }}</p>
               <p v-if="item.note" class="info-note">{{ item.note }}</p>
@@ -61,13 +76,19 @@ const grouped = computed(() => {
                 開啟連結
               </a>
             </div>
+            <div class="card-actions"><button class="icon-btn" aria-label="編輯" @click="openEdit(item.id)"><Icon name="edit" :size="17" /></button><button class="icon-btn danger" aria-label="刪除" @click="openDelete(item.id)"><Icon name="trash" :size="17" /></button></div>
           </div>
         </template>
       </template>
       <div v-else class="empty">
         <p>這裡還沒有資料</p>
+        <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
       </div>
     </template>
+    <button class="fab" aria-label="新增資訊" @click="openCreate"><Icon name="plus" :size="23" /></button>
+    <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
+    <DrawerForm :open="formOpen" :title="`${editingId ? '編輯' : '新增'}．常用資訊`" size="sm" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
+    <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
   </section>
 </template>
 

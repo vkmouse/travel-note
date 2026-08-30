@@ -1,5 +1,6 @@
 import type { Env } from '../types'
 import { jsonError, jsonOk } from '../lib/response'
+import { INFO_CATEGORIES, isValidCategory } from '../lib/enums'
 
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   const { DB } = context.env
@@ -34,6 +35,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const category = String(body.category ?? '').trim()
     const title = String(body.title ?? '').trim()
     if (!category || !title) return jsonError('category 與 title 為必填', 400)
+    if (!isValidCategory(category, INFO_CATEGORIES)) return jsonError(`category 必須是：${INFO_CATEGORIES.join('、')}`, 400)
 
     const link = String(body.link ?? '')
     const note = String(body.note ?? '')

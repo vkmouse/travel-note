@@ -2,8 +2,28 @@
 import { computed, ref, watch } from 'vue'
 import { useItinerary } from '../composables/useItinerary'
 import Icon from '../components/Icon.vue'
+import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
+import DrawerConfirm from '../components/DrawerConfirm.vue'
+import { createItinerary, deleteItinerary, updateItinerary } from '../services/api'
 
-const { items, loading, error } = useItinerary()
+const { items, loading, error, refresh } = useItinerary()
+const formOpen = ref(false)
+const deleteOpen = ref(false)
+const editingId = ref<string | null>(null)
+const deletingId = ref<string | null>(null)
+const busy = ref(false)
+const actionError = ref('')
+const fields: DrawerField[] = [
+  { key: 'date', label: '日期', type: 'date', required: true }, { key: 'time', label: '時間', type: 'time' },
+  { key: 'title', label: '行程名稱', type: 'text', required: true }, { key: 'location', label: '地點', type: 'text' },
+  { key: 'map_url', label: '地圖連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea' },
+]
+const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { date: '' })
+function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
+function openEdit(id: string) { editingId.value = id; actionError.value = ''; formOpen.value = true }
+function openDelete(id: string) { deletingId.value = id; actionError.value = ''; deleteOpen.value = true }
+async function save(values: Record<string, string>) { busy.value = true; actionError.value = ''; try { if (editingId.value) await updateItinerary(editingId.value, values); else await createItinerary(values as never); formOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function confirmDelete() { if (!deletingId.value) return; busy.value = true; try { await deleteItinerary(deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 
 const days = computed(() => [...new Set(items.value.map((i) => i.date))].sort())
 const activeDay = ref<string | null>(null)
@@ -61,7 +81,7 @@ function dayNum(d: string) {
             <div class="tl-time">{{ it.time || '整天' }}</div>
             <div class="tl-card">
               <div class="tl-card-head">
-                <p class="tl-title">{{ it.title }}</p>
+              <div class="tl-card-head"><p class="tl-title">{{ it.title }}</p><div class="card-actions"><button class="icon-btn" aria-label="編輯" @click="openEdit(it.id)"><Icon name="edit" :size="17" /></button><button class="icon-btn danger" aria-label="刪除" @click="openDelete(it.id)"><Icon name="trash" :size="17" /></button></div></div>
               </div>
               <p v-if="it.location" class="tl-loc">
                 <Icon name="pin" :size="13" />
@@ -78,8 +98,13 @@ function dayNum(d: string) {
       </div>
       <div v-else class="empty">
         <p>{{ days.length ? '這天還沒有安排行程' : '尚未新增任何行程' }}</p>
+        <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
       </div>
     </template>
+    <button class="fab" aria-label="新增行程" @click="openCreate"><Icon name="plus" :size="23" /></button>
+    <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
+    <DrawerForm :open="formOpen" title="行程" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
+    <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
   </section>
 </template>
 

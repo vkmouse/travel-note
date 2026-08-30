@@ -3,8 +3,23 @@ import { computed, ref } from 'vue'
 import { useDocuments } from '../composables/useDocuments'
 import { CATEGORY_ICON } from '../icons'
 import Icon from '../components/Icon.vue'
+import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
+import DrawerConfirm from '../components/DrawerConfirm.vue'
+import { createDocument, deleteDocument, updateDocument } from '../services/api'
 
-const { items, loading, error } = useDocuments()
+const { items, loading, error, refresh } = useDocuments()
+const formOpen = ref(false); const deleteOpen = ref(false); const editingId = ref<string | null>(null); const deletingId = ref<string | null>(null); const busy = ref(false); const actionError = ref('')
+const fields: DrawerField[] = [
+  { key: 'category', label: '分類', type: 'select', required: true, options: ['住宿', '機票', '交通', 'KKday', 'Klook', '火車', '簽證', '其他'] },
+  { key: 'title', label: '名稱', type: 'text', required: true }, { key: 'date_start', label: '開始日期', type: 'date' },
+  { key: 'date_end', label: '結束日期', type: 'date' }, { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea' },
+]
+const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0].options?.[0] })
+function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
+function openEdit(id: string) { editingId.value = id; actionError.value = ''; formOpen.value = true }
+function openDelete(id: string) { deletingId.value = id; actionError.value = ''; deleteOpen.value = true }
+async function save(values: Record<string, string>) { busy.value = true; try { if (editingId.value) await updateDocument(editingId.value, values); else await createDocument(values as never); formOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
+async function confirmDelete() { if (!deletingId.value) return; busy.value = true; try { await deleteDocument(deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 
 const categories = computed(() => ['全部', ...new Set(items.value.map((d) => d.category))])
 const activeCategory = ref('全部')
@@ -55,6 +70,7 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
                 <div class="ticket-cat">{{ doc.category }}</div>
                 <p class="ticket-title">{{ doc.title }}</p>
               </div>
+              <div class="card-actions"><button class="icon-btn" aria-label="編輯" @click="openEdit(doc.id)"><Icon name="edit" :size="17" /></button><button class="icon-btn danger" aria-label="刪除" @click="openDelete(doc.id)"><Icon name="trash" :size="17" /></button></div>
             </div>
             <div v-if="dateRange(doc)" class="ticket-dates">{{ dateRange(doc) }}</div>
             <div v-if="doc.note" class="ticket-note">{{ doc.note }}</div>
@@ -67,8 +83,13 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
       </div>
       <div v-else class="empty">
         <p>這個分類還沒有文件</p>
+        <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
       </div>
     </template>
+    <button class="fab" aria-label="新增文件" @click="openCreate"><Icon name="plus" :size="23" /></button>
+    <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
+    <DrawerForm :open="formOpen" :title="`${editingId ? '編輯' : '新增'}．旅行文件`" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
+    <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
   </section>
 </template>
 

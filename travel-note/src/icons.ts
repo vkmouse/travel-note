@@ -1,4 +1,8 @@
 export const ICONS: Record<string, string> = {
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  edit: '<path d="M4 20h4L19 9a2.1 2.1 0 0 0-3-3L5 17z"/><path d="M14.5 7.5l2 2"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3"/>',
+  chevrondown: '<path d="m6 9 6 6 6-6"/>',
   calendar: '<rect x="3" y="4" width="18" height="17" rx="3"/><path d="M7.9 2v4.5M16.1 2v4.5M3 9h18"/>',
   ticket:
     '<path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1.3a1.7 1.7 0 0 0 0 3.4V14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1.3a1.7 1.7 0 0 0 0-3.4z"/><path d="M9 6v12" stroke-dasharray="2.2 2.2"/>',
