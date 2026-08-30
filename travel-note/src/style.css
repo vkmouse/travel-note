@@ -1,0 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+:root {
+  --ink: #16223a;
+  --paper: #f5f2ea;
+  --card: #ffffff;
+  --brass: #a9792c;
+  --slate: #4f6b87;
+  --muted: #767b8c;
+  --icon-muted: #565b6c;
+  --line: #e3ddce;
+  --danger: #b3392c;
+  --r-sm: 8px;
+  --r-md: 12px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--paper);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  color: var(--ink);
+  display: flex;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+a {
+  color: inherit;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+svg {
+  display: block;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+#app {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.section-label {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brass);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 24px 0 11px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.section-label:first-child {
+  margin-top: 0;
+}
+.section-label svg {
+  width: 14px;
+  height: 14px;
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 28px 10px;
+}
+.empty p {
+  margin: 0;
+}
+
+.state-msg {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 28px 10px;
+}
+.state-msg.error {
+  color: var(--danger);
+}

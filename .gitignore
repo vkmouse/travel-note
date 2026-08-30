@@ -1,0 +1,23 @@
+# 白名單模式：先忽略全部，再放行指定路徑
+/*
+!/.gitignore
+!/travel-note/
+
+/travel-note/*
+!/travel-note/functions/
+!/travel-note/public/
+!/travel-note/server/
+!/travel-note/src/
+!/travel-note/.gitignore
+!/travel-note/env.d.ts
+!/travel-note/index.html
+!/travel-note/package.json
+!/travel-note/package-lock.json
+!/travel-note/tsconfig.json
+!/travel-note/tsconfig.app.json
+!/travel-note/tsconfig.node.json
+!/travel-note/tsconfig.functions.json
+!/travel-note/tsconfig.worker.json
+!/travel-note/vite.config.ts
+!/travel-note/worker-configuration.d.ts
+!/travel-note/wrangler.jsonc
