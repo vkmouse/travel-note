@@ -1,4 +1,4 @@
-import type { ApiResponse, ChecklistItem, DocumentItem, InfoItem, ItineraryItem, Travel } from '../types'
+import type { ApiResponse, ChecklistItem, DocumentItem, InfoItem, ItineraryItem, PendingInvitation, Travel, TravelExportPayload, TravelMembers } from '../types'
 import { getAccessHeaders, refreshAccessToken } from './auth'
 
 async function authorizedFetch(url: string, init: RequestInit = {}) {
@@ -55,6 +55,32 @@ export function deleteTravel(id: string) {
 
 export function loadSampleTravel(): Promise<{ travel: Travel; inserted: Record<string, number> }> {
   return mutate<{ travel: Travel; inserted: Record<string, number> }>(`/api/sample-travel`, 'POST', undefined, '建立範例行程失敗')
+}
+
+export function exportTravel(travelId: string): Promise<TravelExportPayload> {
+  return getJson(`/api/travels/${travelId}/export`, '匯出失敗')
+}
+export function importTravel(payload: unknown): Promise<{ travel: Travel; inserted: Record<string, number> }> {
+  return mutate<{ travel: Travel; inserted: Record<string, number> }>(`/api/travel-import`, 'POST', payload, '匯入失敗')
+}
+
+export function fetchTravelMembers(travelId: string): Promise<TravelMembers> {
+  return getJson(`/api/travels/${travelId}/members`, '無法取得成員列表')
+}
+export function inviteMember(travelId: string, email: string) {
+  return mutate<{ id: string; travel_id: string; email: string; status: string }>(
+    `/api/travels/${travelId}/invitations`, 'POST', { email }, '邀請失敗',
+  )
+}
+export function fetchMyInvitations(): Promise<PendingInvitation[]> {
+  return getJson('/api/invitations', '無法取得邀請列表')
+}
+export function acceptInvitation(id: string) {
+  return mutate<{ id: string; status: string }>(`/api/invitations/${id}/accept`, 'POST', undefined, '接受邀請失敗')
+}
+// 拒絕邀請、擁有者收回邀請、成員自行離開旅行，共用同一支 DELETE
+export function declineInvitation(id: string) {
+  return mutate<{ id: string }>(`/api/invitations/${id}`, 'DELETE', undefined, '操作失敗')
 }
 
 export function fetchItinerary(travelId: string): Promise<ItineraryItem[]> {

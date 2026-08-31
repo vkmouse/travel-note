@@ -56,15 +56,22 @@ function submit() {
       <div class="drawer-body">
         <h3 class="drawer-title">{{ title }}</h3>
         <div v-for="field in fields" :key="field.key">
-          <label class="f-label" :for="`drawer-${field.key}`">{{ field.label }}</label>
-          <div v-if="field.type === 'select'" class="f-select-wrap">
-            <span class="f-select-icon">
-              <Icon :name="CATEGORY_ICON[form[field.key]] || 'tag'" :size="16" />
-            </span>
-            <select :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input f-select">
-              <option v-for="option in field.options" :key="option" :value="option">{{ option }}</option>
-            </select>
-            <span class="f-select-chevron"><Icon name="chevrondown" :size="14" /></span>
+          <span v-if="field.type === 'select'" class="f-label" :id="`drawer-${field.key}-label`">{{ field.label }}</span>
+          <label v-else class="f-label" :for="`drawer-${field.key}`">{{ field.label }}</label>
+          <div v-if="field.type === 'select'" class="f-grid" role="radiogroup" :aria-labelledby="`drawer-${field.key}-label`">
+            <button
+              v-for="option in field.options"
+              :key="option"
+              type="button"
+              class="f-grid-opt"
+              :class="{ 'f-grid-opt--active': form[field.key] === option }"
+              role="radio"
+              :aria-checked="form[field.key] === option"
+              @click="form[field.key] = option"
+            >
+              <Icon :name="CATEGORY_ICON[option] || 'tag'" :size="19" />
+              <span>{{ option }}</span>
+            </button>
           </div>
           <textarea v-else-if="field.type === 'textarea'" :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" rows="2"></textarea>
           <input v-else :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" :type="field.type" />
@@ -91,11 +98,11 @@ function submit() {
 .f-label { display: block; margin: 14px 0 5px; color: var(--muted); font-size: 12px; font-weight: 600; }
 .f-input { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); font: 14px 'Inter', sans-serif; }
 textarea.f-input { resize: vertical; min-height: 60px; }
-.f-select-wrap { position: relative; display: flex; align-items: center; }
-.f-select { padding-right: 34px; padding-left: 38px; appearance: none; cursor: pointer; }
-.f-select-icon, .f-select-chevron { position: absolute; display: flex; pointer-events: none; }
-.f-select-icon { left: 12px; color: var(--brass); }
-.f-select-chevron { right: 12px; color: var(--muted); }
+.f-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 8px; }
+.f-grid-opt { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--card); color: var(--icon-muted); font: 12px 'Inter', sans-serif; }
+.f-grid-opt span { color: var(--ink); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.f-grid-opt--active { background: var(--ink); border-color: var(--ink); color: #fff; }
+.f-grid-opt--active span { color: #fff; }
 .drawer-error { margin: 10px 0 0; color: var(--danger); font-size: 13px; }
 .drawer-actions { display: flex; gap: 10px; flex-shrink: 0; padding: 12px 18px calc(16px + var(--safe-bottom)); border-top: 1px solid var(--line); }
 .drawer-actions button { min-height: 44px; flex: 1; border: 0; border-radius: 10px; font-weight: 600; }

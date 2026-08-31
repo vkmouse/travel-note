@@ -1,3 +1,5 @@
+import { setCurrentEmail } from '../composables/useCurrentUser'
+
 export interface AccessCredentials { clientId: string; clientSecret: string }
 const CLIENT_ID_KEY = 'CF_ACCESS_CLIENT_ID'
 const CLIENT_SECRET_KEY = 'CF_ACCESS_CLIENT_SECRET'
@@ -32,7 +34,11 @@ export async function login(credentials?: AccessCredentials): Promise<boolean> {
       },
       credentials: 'include',
     })
-    return response.status === 200
+    if (response.status !== 200) return false
+    // 記下自己的 email，成員列表用來判斷「這一列是我自己」
+    const identity = await response.json().catch(() => null) as { email?: string } | null
+    if (identity?.email) setCurrentEmail(identity.email)
+    return true
   } catch { return false }
 }
 

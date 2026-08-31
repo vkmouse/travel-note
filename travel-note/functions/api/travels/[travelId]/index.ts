@@ -33,6 +33,9 @@ export const onRequestDelete: PagesFunction<Env, any, TravelAuthContext> = async
   const { DB } = context.env
   const travelId = context.data.travelId
 
+  // 只有擁有者可以刪除整趟旅行，共享者不行
+  if (!context.data.isOwner) return jsonError('只有擁有者可以刪除這趟旅行', 403)
+
   try {
     // 沒有用 FK cascade，刪除 travel 時手動把明細表與成員關係一起清掉
     await DB.batch([

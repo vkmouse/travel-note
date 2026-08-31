@@ -5,6 +5,8 @@ import { useCurrentTravel } from '../composables/useCurrentTravel'
 import Icon from './Icon.vue'
 import DrawerForm, { type DrawerField } from './DrawerForm.vue'
 import DrawerConfirm from './DrawerConfirm.vue'
+import ExportDrawer from './ExportDrawer.vue'
+import ImportTravelDrawer from './ImportTravelDrawer.vue'
 import { createTravel, deleteTravel, loadSampleTravel, updateTravel } from '../services/api'
 
 const emit = defineEmits<{ picked: [id: string] }>()
@@ -20,6 +22,10 @@ const busy = ref(false)
 const sampleBusy = ref(false)
 const actionError = ref('')
 
+const exportOpen = ref(false)
+const exportingId = ref<string | null>(null)
+const importOpen = ref(false)
+
 const fields: DrawerField[] = [
   { key: 'title', label: '旅行名稱', type: 'text', required: true },
   { key: 'date_start', label: '開始日期', type: 'date' },
@@ -27,10 +33,19 @@ const fields: DrawerField[] = [
 ]
 
 const formValues = computed(() => travels.value.find((t) => t.id === editingId.value) ?? { title: '' })
+const exportingTitle = computed(() => travels.value.find((t) => t.id === exportingId.value)?.title ?? '')
 
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
 function openEdit(id: string) { editingId.value = id; actionError.value = ''; formOpen.value = true }
 function openDelete(id: string) { deletingId.value = id; actionError.value = ''; deleteOpen.value = true }
+function openExport(id: string) { exportingId.value = id; exportOpen.value = true }
+
+async function handleImported(travelId: string) {
+  importOpen.value = false
+  selectTravel(travelId)
+  emit('picked', travelId)
+  await refresh()
+}
 
 function pick(id: string) {
   selectTravel(id)
@@ -111,12 +126,17 @@ function fmtRange(t: { date_start: string | null; date_end: string | null }) {
             <span v-if="t.id === currentTravelId" class="travel-card-check"><Icon name="check" :size="10" :stroke-width="3" /></span>
           </div>
           <div class="travel-card-body">
-            <p class="travel-card-title">{{ t.title }}</p>
+            <p class="travel-card-title">
+              {{ t.title }}
+              <span v-if="!t.is_owner" class="shared-tag"><Icon name="users" :size="10" />共享</span>
+            </p>
             <p class="travel-card-range">{{ fmtRange(t) }}</p>
           </div>
           <div class="card-actions" @click.stop>
             <button class="icon-btn" aria-label="編輯" @click="openEdit(t.id)"><Icon name="edit" :size="17" /></button>
-            <button class="icon-btn danger" aria-label="刪除" @click="openDelete(t.id)"><Icon name="trash" :size="17" /></button>
+            <button class="icon-btn" aria-label="匯出" @click="openExport(t.id)"><Icon name="download" :size="17" /></button>
+            <!-- 刪除整趟旅行只有擁有者能做 -->
+            <button v-if="t.is_owner" class="icon-btn danger" aria-label="刪除" @click="openDelete(t.id)"><Icon name="trash" :size="17" /></button>
           </div>
         </div>
       </div>
@@ -127,11 +147,16 @@ function fmtRange(t: { date_start: string | null; date_end: string | null }) {
         </button>
       </div>
     </template>
-    <button class="travel-add-btn" @click="openCreate"><Icon name="plus" :size="15" />新增旅行</button>
+    <div class="travel-bottom-actions">
+      <button class="travel-add-btn" @click="openCreate"><Icon name="plus" :size="15" />新增旅行</button>
+      <button class="travel-import-btn" @click="importOpen = true"><Icon name="upload" :size="15" />匯入旅行</button>
+    </div>
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
 
     <DrawerForm :open="formOpen" :title="editingId ? '編輯旅行' : '新增旅行'" size="sm" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${travels.find((t) => t.id === deletingId)?.title ?? '這趟旅行'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
+    <ExportDrawer :open="exportOpen" :travel-id="exportingId" :travel-title="exportingTitle" @close="exportOpen = false" />
+    <ImportTravelDrawer :open="importOpen" @close="importOpen = false" @imported="handleImported" />
   </div>
 </template>
 
@@ -200,6 +225,21 @@ function fmtRange(t: { date_start: string | null; date_end: string | null }) {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.shared-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--slate);
+  background: var(--paper);
+  padding: 2px 7px 2px 6px;
+  border-radius: 999px;
 }
 .travel-card-range {
   font-family: 'IBM Plex Mono', monospace;
@@ -207,12 +247,16 @@ function fmtRange(t: { date_start: string | null; date_end: string | null }) {
   color: var(--muted);
   margin: 3px 0 0;
 }
+.travel-bottom-actions {
+  display: flex;
+  gap: 8px;
+}
 .travel-add-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  width: 100%;
+  flex: 1;
   min-height: 46px;
   border: 1px dashed var(--line);
   border-radius: var(--r-md);
@@ -222,6 +266,23 @@ function fmtRange(t: { date_start: string | null; date_end: string | null }) {
   font-size: 13.5px;
 }
 .travel-add-btn:active {
+  background: var(--paper);
+}
+.travel-import-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  min-height: 46px;
+  border: 1px dashed var(--line);
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 13.5px;
+}
+.travel-import-btn:active {
   background: var(--paper);
 }
 </style>

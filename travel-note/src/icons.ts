@@ -29,6 +29,14 @@ export const ICONS: Record<string, string> = {
   plug: '<path d="M9 2v5M15 2v5M7.5 7h9v3a4.5 4.5 0 0 1-9 0z"/><path d="M12 14v4M9 21h6"/>',
   pill: '<path d="M4.7 14.8l5.6-5.6a4.1 4.1 0 1 1 5.8 5.8l-5.6 5.6a4.1 4.1 0 0 1-5.8-5.8z"/><path d="M8.7 8.7l6.6 6.6"/>',
   suitcase: '<rect x="3" y="7" width="18" height="13" rx="2.2"/><path d="M8.5 7V5.3A1.8 1.8 0 0 1 10.3 3.5h3.4A1.8 1.8 0 0 1 15.5 5.3V7"/><path d="M3 12.5h18"/>',
+  users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 8.3a3 3 0 0 1 0 5.9"/><path d="M18.5 14.6c2.3.6 3.5 2.4 3.5 5.4"/>',
+  mail: '<rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/>',
+  userplus: '<circle cx="9.5" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M18.5 8v5M16 10.5h5"/>',
+  doorexit: '<path d="M13 4H7a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 7 20h6"/><path d="M10.5 12h9.5"/><path d="M17 9l3 3-3 3"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
+  download: '<path d="M12 3.5v11"/><path d="M7.5 10.5l4.5 4.5 4.5-4.5"/><path d="M4.5 18.5h15"/>',
+  upload: '<path d="M12 19.5v-11"/><path d="M7.5 12.5l4.5-4.5 4.5 4.5"/><path d="M4.5 18.5h15"/>',
+  copy: '<rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5V5.8A1.8 1.8 0 0 0 13.7 4H5.8A1.8 1.8 0 0 0 4 5.8v7.9a1.8 1.8 0 0 0 1.8 1.8h2.7"/>',
 }
 
 export const ICONS_FILLED: Record<string, string> = {

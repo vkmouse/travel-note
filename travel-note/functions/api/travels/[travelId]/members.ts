@@ -10,8 +10,9 @@ export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (c
       `SELECT u.id AS user_id, u.email FROM travels t JOIN users u ON u.id = t.user_id WHERE t.id = ?`,
     ).bind(travelId).first<{ user_id: string; email: string }>()
 
+    // 補上 m.id，前端才能對單一成員/邀請呼叫 DELETE /api/invitations/:id
     const { results } = await DB.prepare(
-      `SELECT u.id AS user_id, u.email, m.status, m.invited_at, m.accepted_at
+      `SELECT m.id, u.id AS user_id, u.email, m.status, m.invited_at, m.accepted_at
        FROM travel_members m JOIN users u ON u.id = m.user_id
        WHERE m.travel_id = ?
        ORDER BY m.invited_at ASC`,
