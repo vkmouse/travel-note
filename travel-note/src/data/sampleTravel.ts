@@ -1,7 +1,4 @@
-// 範例行程的內容原本寫死在後端 functions/api/sample-travel.ts，
-// 現在搬到前端。「載入範例行程」與「匯入旅行」在語意上是同一件事：
-// 組出一份 { title, date_start, date_end, itinerary, documents, info, checklist }，
-// 呼叫 createTravel()（POST /api/travels）一次建立。
+// 範例行程的內容原本寫死在後端 functions/api/sample-travel.ts，現在搬到前端維護
 
 const SAMPLE_ITINERARY = [
   { order: 1, date: '2026-10-05', time: '09:00', title: '抵達成田機場', location: '成田機場 Terminal 1', map_url: 'https://maps.google.com/?q=成田機場', note: '領取JR PASS' },

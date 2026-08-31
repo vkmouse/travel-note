@@ -49,7 +49,6 @@ export const ICONS_FILLED: Record<string, string> = {
     '<rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor"/><path class="cutout-stroke" d="M8 12.5l2.5 2.5L16 9"/>',
 }
 
-/** Category (documents / info / checklist) → icon name */
 export const CATEGORY_ICON: Record<string, string> = {
   住宿: 'bed',
   機票: 'send',

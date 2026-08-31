@@ -1,9 +1,6 @@
 import type { AuthContext, Env } from '../types'
 import { jsonError, jsonOk } from '../lib/response'
 
-// 建立旅行時可以只帶 title（建立一趟空白旅行），
-// 也可以額外帶入 itinerary / documents / info / checklist 陣列一次寫入完整內容，
-// 讓「範例行程」「匯入旅行」都共用這一支 API，不用再另外開 /api/sample-travel、/api/travel-import。
 const MAX_ROWS_PER_TABLE = 500
 const MAX_STRING_LEN = 4000
 

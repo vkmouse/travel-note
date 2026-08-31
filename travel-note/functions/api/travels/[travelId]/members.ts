@@ -10,7 +10,7 @@ export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (c
       `SELECT u.id AS user_id, u.email FROM travels t JOIN users u ON u.id = t.user_id WHERE t.id = ?`,
     ).bind(travelId).first<{ user_id: string; email: string }>()
 
-    // 補上 m.id，前端才能對單一成員/邀請呼叫 DELETE /api/invitations/:id
+    // 回傳 m.id 而非只回傳 user info，讓每一筆成員/邀請都能被單獨操作（接受、拒絕、移除）
     const { results } = await DB.prepare(
       `SELECT m.id, u.id AS user_id, u.email, m.status, m.invited_at, m.accepted_at
        FROM travel_members m JOIN users u ON u.id = m.user_id

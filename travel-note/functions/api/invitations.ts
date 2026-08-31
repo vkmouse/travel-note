@@ -1,7 +1,6 @@
 import type { AuthContext, Env } from '../types'
 import { jsonError, jsonOk } from '../lib/response'
 
-// 列出「我」在所有旅行裡還沒處理的邀請
 export const onRequestGet: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
   const userId = context.data.userId

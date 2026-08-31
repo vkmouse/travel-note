@@ -35,7 +35,7 @@ export async function login(credentials?: AccessCredentials): Promise<boolean> {
       credentials: 'include',
     })
     if (response.status !== 200) return false
-    // 記下自己的 email，成員列表用來判斷「這一列是我自己」
+    // 記下自己的 email，供其他畫面比對目前使用者身份
     const identity = await response.json().catch(() => null) as { email?: string } | null
     if (identity?.email) setCurrentEmail(identity.email)
     return true

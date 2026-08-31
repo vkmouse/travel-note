@@ -1,6 +1,6 @@
 import { computed, ref } from 'vue'
 
-// module-level ref：登入成功後由 services/auth.ts 寫入，不做持久化
+// module-level ref，不做持久化：重新整理頁面即清空，需重新登入
 const currentEmail = ref<string | null>(null)
 
 export function setCurrentEmail(email: string | null) {
