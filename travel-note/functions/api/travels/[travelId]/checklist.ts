@@ -4,15 +4,15 @@ import { CHECKLIST_CATEGORIES, isValidCategory } from '../../../lib/enums'
 
 export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
   const { DB } = context.env
-  const userId = context.data.userId
   const travelId = context.data.travelId
 
   try {
+    // 存取權已在 middleware 檢查過，這裡不再用 user_id 縮小範圍，讓共享者互相看得到彼此的項目
     const { results } = await DB.prepare(
       `SELECT id, "order", category, title, note, is_checked
-       FROM checklist WHERE travel_id = ? AND user_id = ?
+       FROM checklist WHERE travel_id = ?
        ORDER BY "order" ASC`,
-    ).bind(travelId, userId).all<Record<string, unknown>>()
+    ).bind(travelId).all<Record<string, unknown>>()
 
     const data = (results ?? []).map((row) => ({ ...row, is_checked: Boolean(row.is_checked) }))
     return jsonOk(data)

@@ -3,15 +3,15 @@ import { jsonError, jsonOk } from '../../../lib/response'
 
 export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
   const { DB } = context.env
-  const userId = context.data.userId
   const travelId = context.data.travelId
 
   try {
+    // 存取權已在 middleware 檢查過，這裡不再用 user_id 縮小範圍，讓共享者互相看得到彼此的項目
     const { results } = await DB.prepare(
       `SELECT id, "order", date, time, title, location, map_url, note
-       FROM itinerary WHERE travel_id = ? AND user_id = ?
+       FROM itinerary WHERE travel_id = ?
        ORDER BY date ASC, "order" ASC`,
-    ).bind(travelId, userId).all()
+    ).bind(travelId).all()
 
     return jsonOk(results ?? [])
   } catch (err) {

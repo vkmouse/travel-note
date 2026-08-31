@@ -4,13 +4,12 @@ import { INFO_CATEGORIES, isValidCategory } from '../../../../lib/enums'
 
 export const onRequestPut: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
   const { DB } = context.env
-  const userId = context.data.userId
   const travelId = context.data.travelId
   const id = context.params.id as string
 
   try {
-    const existing = await DB.prepare(`SELECT * FROM info WHERE id = ? AND travel_id = ? AND user_id = ?`)
-      .bind(id, travelId, userId)
+    const existing = await DB.prepare(`SELECT * FROM info WHERE id = ? AND travel_id = ?`)
+      .bind(id, travelId)
       .first<Record<string, unknown>>()
     if (!existing) return jsonError('找不到這筆資訊', 404)
 
@@ -23,8 +22,8 @@ export const onRequestPut: PagesFunction<Env, any, TravelAuthContext> = async (c
     const link = String(body.link ?? existing.link ?? '')
     const note = String(body.note ?? existing.note ?? '')
 
-    await DB.prepare(`UPDATE info SET category = ?, title = ?, link = ?, note = ? WHERE id = ? AND travel_id = ? AND user_id = ?`)
-      .bind(category, title, link, note, id, travelId, userId)
+    await DB.prepare(`UPDATE info SET category = ?, title = ?, link = ?, note = ? WHERE id = ? AND travel_id = ?`)
+      .bind(category, title, link, note, id, travelId)
       .run()
 
     return jsonOk({
@@ -43,19 +42,18 @@ export const onRequestPut: PagesFunction<Env, any, TravelAuthContext> = async (c
 
 export const onRequestPatch: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
   const { DB } = context.env
-  const userId = context.data.userId
   const travelId = context.data.travelId
   const id = context.params.id as string
 
   try {
     const body = await context.request.json<Record<string, unknown>>()
     if (typeof body.is_checked !== 'boolean') return jsonError('is_checked 必須是 boolean', 400)
-    const existing = await DB.prepare(`SELECT * FROM info WHERE id = ? AND travel_id = ? AND user_id = ?`)
-      .bind(id, travelId, userId)
+    const existing = await DB.prepare(`SELECT * FROM info WHERE id = ? AND travel_id = ?`)
+      .bind(id, travelId)
       .first<Record<string, unknown>>()
     if (!existing) return jsonError('找不到這筆資訊', 404)
-    await DB.prepare(`UPDATE info SET is_checked = ? WHERE id = ? AND travel_id = ? AND user_id = ?`)
-      .bind(body.is_checked ? 1 : 0, id, travelId, userId)
+    await DB.prepare(`UPDATE info SET is_checked = ? WHERE id = ? AND travel_id = ?`)
+      .bind(body.is_checked ? 1 : 0, id, travelId)
       .run()
     return jsonOk({
       id,
@@ -73,12 +71,11 @@ export const onRequestPatch: PagesFunction<Env, any, TravelAuthContext> = async 
 
 export const onRequestDelete: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
   const { DB } = context.env
-  const userId = context.data.userId
   const travelId = context.data.travelId
   const id = context.params.id as string
 
   try {
-    await DB.prepare(`DELETE FROM info WHERE id = ? AND travel_id = ? AND user_id = ?`).bind(id, travelId, userId).run()
+    await DB.prepare(`DELETE FROM info WHERE id = ? AND travel_id = ?`).bind(id, travelId).run()
     return jsonOk({ id })
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'delete failed', 500)

@@ -4,22 +4,22 @@ import { INFO_CATEGORIES, isValidCategory } from '../../../lib/enums'
 
 export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
   const { DB } = context.env
-  const userId = context.data.userId
   const travelId = context.data.travelId
   const category = new URL(context.request.url).searchParams.get('category')
 
   try {
+    // 存取權已在 middleware 檢查過，這裡不再用 user_id 縮小範圍，讓共享者互相看得到彼此的項目
     const stmt = category
       ? DB.prepare(
           `SELECT id, "order", category, title, link, note, is_checked
-           FROM info WHERE travel_id = ? AND user_id = ? AND category = ?
+           FROM info WHERE travel_id = ? AND category = ?
            ORDER BY "order" ASC`,
-        ).bind(travelId, userId, category)
+        ).bind(travelId, category)
       : DB.prepare(
           `SELECT id, "order", category, title, link, note, is_checked
-           FROM info WHERE travel_id = ? AND user_id = ?
+           FROM info WHERE travel_id = ?
            ORDER BY "order" ASC`,
-        ).bind(travelId, userId)
+        ).bind(travelId)
 
     const { results } = await stmt.all<Record<string, unknown>>()
     const data = (results ?? []).map((row) => ({ ...row, is_checked: Boolean(row.is_checked) }))

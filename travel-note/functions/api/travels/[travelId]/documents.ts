@@ -4,28 +4,28 @@ import { DOCUMENT_CATEGORIES, isValidCategory, normalizeDocumentCategory } from 
 
 export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
   const { DB } = context.env
-  const userId = context.data.userId
   const travelId = context.data.travelId
   const category = new URL(context.request.url).searchParams.get('category')
 
   try {
+    // 存取權已在 middleware 檢查過，這裡不再用 user_id 縮小範圍，讓共享者互相看得到彼此的項目
     const stmt = category === '票券'
       ? DB.prepare(
           `SELECT id, "order", category, title, date_start, date_end, link, note
-           FROM documents WHERE travel_id = ? AND user_id = ? AND category IN (?, ?, ?)
+           FROM documents WHERE travel_id = ? AND category IN (?, ?, ?)
            ORDER BY "order" ASC`,
-        ).bind(travelId, userId, '票券', 'KKday', 'Klook')
+        ).bind(travelId, '票券', 'KKday', 'Klook')
       : category
         ? DB.prepare(
             `SELECT id, "order", category, title, date_start, date_end, link, note
-             FROM documents WHERE travel_id = ? AND user_id = ? AND category = ?
+             FROM documents WHERE travel_id = ? AND category = ?
              ORDER BY "order" ASC`,
-          ).bind(travelId, userId, category)
+          ).bind(travelId, category)
       : DB.prepare(
           `SELECT id, "order", category, title, date_start, date_end, link, note
-           FROM documents WHERE travel_id = ? AND user_id = ?
+           FROM documents WHERE travel_id = ?
            ORDER BY "order" ASC`,
-        ).bind(travelId, userId)
+        ).bind(travelId)
 
     const { results } = await stmt.all()
     return jsonOk((results ?? []).map((row) => ({ ...row, category: normalizeDocumentCategory(row.category) })))

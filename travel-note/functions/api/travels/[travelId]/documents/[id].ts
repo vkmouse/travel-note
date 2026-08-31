@@ -4,13 +4,12 @@ import { DOCUMENT_CATEGORIES, isValidCategory, normalizeDocumentCategory } from 
 
 export const onRequestPut: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
   const { DB } = context.env
-  const userId = context.data.userId
   const travelId = context.data.travelId
   const id = context.params.id as string
 
   try {
-    const existing = await DB.prepare(`SELECT * FROM documents WHERE id = ? AND travel_id = ? AND user_id = ?`)
-      .bind(id, travelId, userId)
+    const existing = await DB.prepare(`SELECT * FROM documents WHERE id = ? AND travel_id = ?`)
+      .bind(id, travelId)
       .first<Record<string, unknown>>()
     if (!existing) return jsonError('找不到這筆文件', 404)
 
@@ -26,9 +25,9 @@ export const onRequestPut: PagesFunction<Env, any, TravelAuthContext> = async (c
     const note = String(body.note ?? existing.note ?? '')
 
     await DB.prepare(
-      `UPDATE documents SET category = ?, title = ?, date_start = ?, date_end = ?, link = ?, note = ? WHERE id = ? AND travel_id = ? AND user_id = ?`,
+      `UPDATE documents SET category = ?, title = ?, date_start = ?, date_end = ?, link = ?, note = ? WHERE id = ? AND travel_id = ?`,
     )
-      .bind(category, title, date_start, date_end, link, note, id, travelId, userId)
+      .bind(category, title, date_start, date_end, link, note, id, travelId)
       .run()
 
     return jsonOk({ id, order: existing.order, category, title, date_start, date_end, link, note })
@@ -39,12 +38,11 @@ export const onRequestPut: PagesFunction<Env, any, TravelAuthContext> = async (c
 
 export const onRequestDelete: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
   const { DB } = context.env
-  const userId = context.data.userId
   const travelId = context.data.travelId
   const id = context.params.id as string
 
   try {
-    await DB.prepare(`DELETE FROM documents WHERE id = ? AND travel_id = ? AND user_id = ?`).bind(id, travelId, userId).run()
+    await DB.prepare(`DELETE FROM documents WHERE id = ? AND travel_id = ?`).bind(id, travelId).run()
     return jsonOk({ id })
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'delete failed', 500)

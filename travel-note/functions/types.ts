@@ -15,4 +15,5 @@ export interface AuthContext extends Record<string, unknown> {
 
 export interface TravelAuthContext extends AuthContext {
   travelId: string
+  isOwner: boolean
 }

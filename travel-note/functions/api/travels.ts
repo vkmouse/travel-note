@@ -6,13 +6,19 @@ export const onRequestGet: PagesFunction<Env, any, AuthContext> = async (context
   const userId = context.data.userId
 
   try {
+    // 清單要同時列出自己擁有的旅行，以及被邀請且已接受的旅行，用 is_owner 讓前端分辨
     const { results } = await DB.prepare(
-      `SELECT id, title, date_start, date_end, "order", created_at
+      `SELECT id, title, date_start, date_end, "order", created_at, 1 AS is_owner
        FROM travels WHERE user_id = ?
+       UNION
+       SELECT t.id, t.title, t.date_start, t.date_end, t."order", t.created_at, 0 AS is_owner
+       FROM travels t
+       JOIN travel_members m ON m.travel_id = t.id
+       WHERE m.user_id = ? AND m.status = 'accepted'
        ORDER BY "order" ASC`,
-    ).bind(userId).all()
+    ).bind(userId, userId).all()
 
-    return jsonOk(results ?? [])
+    return jsonOk((results ?? []).map((row: Record<string, unknown>) => ({ ...row, is_owner: Boolean(row.is_owner) })))
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'query failed', 500)
   }

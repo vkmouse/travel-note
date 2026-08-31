@@ -10,6 +10,7 @@ export interface Travel {
   date_start: string | null
   date_end: string | null
   order: number
+  is_owner: boolean
 }
 
 export interface ItineraryItem {
