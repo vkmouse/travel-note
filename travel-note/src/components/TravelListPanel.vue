@@ -60,8 +60,8 @@ async function save(values: Record<string, string>) {
       await updateTravel(editingId.value, values)
     } else {
       const created = await createTravel(values as never)
-      selectTravel(created.id)
-      emit('picked', created.id)
+      selectTravel(created.travel.id)
+      emit('picked', created.travel.id)
     }
     formOpen.value = false
     await refresh()

@@ -1,5 +1,6 @@
 import type { ApiResponse, ChecklistItem, DocumentItem, InfoItem, ItineraryItem, PendingInvitation, Travel, TravelExportPayload, TravelMembers } from '../types'
 import { getAccessHeaders, refreshAccessToken } from './auth'
+import { SAMPLE_TRAVEL_PAYLOAD } from '../data/sampleTravel'
 
 async function authorizedFetch(url: string, init: RequestInit = {}) {
   const request = () => fetch(url, {
@@ -43,8 +44,25 @@ export function fetchTravels(): Promise<Travel[]> {
   return getJson('/api/travels', '無法取得旅行清單')
 }
 
-export function createTravel(payload: { title: string; date_start?: string; date_end?: string }) {
-  return mutate<Travel>('/api/travels', 'POST', payload, '新增旅行失敗')
+// POST /api/travels 除了 title/date_start/date_end，也可以一次帶入
+// itinerary / documents / info / checklist 陣列，用同一支 API 建立完整內容的旅行
+// （不帶就等於建立空白旅行，帶了就等於「範例行程」「匯入旅行」）
+export interface CreateTravelPayload {
+  title: string
+  date_start?: string
+  date_end?: string
+  itinerary?: TravelExportPayload['itinerary']
+  documents?: TravelExportPayload['documents']
+  info?: TravelExportPayload['info']
+  checklist?: TravelExportPayload['checklist']
+}
+export interface CreateTravelResult {
+  travel: Travel
+  inserted: Record<string, number>
+}
+
+export function createTravel(payload: CreateTravelPayload): Promise<CreateTravelResult> {
+  return mutate<CreateTravelResult>('/api/travels', 'POST', payload, '新增旅行失敗')
 }
 export function updateTravel(id: string, payload: Partial<{ title: string; date_start: string; date_end: string }>) {
   return mutate<Travel>(`/api/travels/${id}`, 'PUT', payload, '更新旅行失敗')
@@ -53,15 +71,29 @@ export function deleteTravel(id: string) {
   return mutate<{ id: string }>(`/api/travels/${id}`, 'DELETE', undefined, '刪除旅行失敗')
 }
 
-export function loadSampleTravel(): Promise<{ travel: Travel; inserted: Record<string, number> }> {
-  return mutate<{ travel: Travel; inserted: Record<string, number> }>(`/api/sample-travel`, 'POST', undefined, '建立範例行程失敗')
+// 範例行程：資料本身寫在前端 src/data/sampleTravel.ts，
+// 跟「匯入旅行」一樣都是組出完整 payload 後呼叫 createTravel()
+export function loadSampleTravel(): Promise<CreateTravelResult> {
+  return createTravel(SAMPLE_TRAVEL_PAYLOAD)
 }
 
 export function exportTravel(travelId: string): Promise<TravelExportPayload> {
   return getJson(`/api/travels/${travelId}/export`, '匯出失敗')
 }
-export function importTravel(payload: unknown): Promise<{ travel: Travel; inserted: Record<string, number> }> {
-  return mutate<{ travel: Travel; inserted: Record<string, number> }>(`/api/travel-import`, 'POST', payload, '匯入失敗')
+// 使用者貼上的是匯出格式（{ travel: {...}, itinerary, documents, info, checklist }），
+// 這裡轉成 createTravel() 需要的扁平 payload，一樣打 POST /api/travels
+export function importTravel(payload: unknown): Promise<CreateTravelResult> {
+  const parsed = (payload ?? {}) as Record<string, unknown>
+  const travel = (parsed.travel ?? {}) as Record<string, unknown>
+  return createTravel({
+    title: String(travel.title ?? ''),
+    date_start: (travel.date_start as string | undefined) ?? undefined,
+    date_end: (travel.date_end as string | undefined) ?? undefined,
+    itinerary: parsed.itinerary as TravelExportPayload['itinerary'],
+    documents: parsed.documents as TravelExportPayload['documents'],
+    info: parsed.info as TravelExportPayload['info'],
+    checklist: parsed.checklist as TravelExportPayload['checklist'],
+  })
 }
 
 export function fetchTravelMembers(travelId: string): Promise<TravelMembers> {
