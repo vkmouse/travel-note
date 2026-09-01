@@ -27,10 +27,10 @@ function handleMembersChanged() {
 }
 
 const TABS = [
-  { to: '/itinerary', name: 'itinerary', label: '每日行程', icon: 'calendar' },
-  { to: '/documents', name: 'documents', label: '旅行文件', icon: 'ticket' },
-  { to: '/info', name: 'info', label: '常用資訊', icon: 'bookmark' },
-  { to: '/checklist', name: 'checklist', label: '行前清單', icon: 'checksquare' },
+  { name: 'itinerary', label: '每日行程', icon: 'calendar' },
+  { name: 'documents', label: '旅行文件', icon: 'ticket' },
+  { name: 'info', label: '常用資訊', icon: 'bookmark' },
+  { name: 'checklist', label: '行前清單', icon: 'checksquare' },
 ] as const
 </script>
 
@@ -62,7 +62,7 @@ const TABS = [
       <RouterLink
         v-for="tab in TABS"
         :key="tab.name"
-        :to="tab.to"
+        :to="{ name: tab.name, params: { travelId: String(currentTravelId) } }"
         class="nav-btn"
         :class="{ active: route.name === tab.name }"
       >

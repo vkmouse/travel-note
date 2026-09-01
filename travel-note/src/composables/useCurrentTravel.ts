@@ -1,18 +1,24 @@
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-// 不做持久化：每次重新整理頁面都會回到旅行選擇畫面（module-level ref，重新載入頁面即重置）
-const currentTravelId = ref<string | null>(null)
-
+// 目前旅行的狀態改由網址（/travels/:travelId/...）承載，
+// 這樣重新整理頁面、分享連結都能保留原本選的旅行。
 export function useCurrentTravel() {
+  const route = useRoute()
+  const router = useRouter()
+
+  const currentTravelId = computed(() => (route.params.travelId as string | undefined) ?? null)
+
   function selectTravel(id: string) {
-    currentTravelId.value = id
+    router.push({ name: 'itinerary', params: { travelId: id } })
   }
+
   function clearTravel() {
-    currentTravelId.value = null
+    router.push({ name: 'picker' })
   }
 
   return {
-    currentTravelId: computed(() => currentTravelId.value),
+    currentTravelId,
     selectTravel,
     clearTravel,
   }
