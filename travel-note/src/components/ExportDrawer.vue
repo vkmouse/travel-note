@@ -48,7 +48,7 @@ async function copy() {
       <div class="drawer-top"><div class="drawer-perf"></div><div class="drawer-handle"></div></div>
       <div class="drawer-body">
         <h3 class="drawer-title">匯出「{{ travelTitle }}」</h3>
-        <p class="hint">複製下面這段文字傳給朋友，對方可以用「匯入旅行」還原成一趟新的旅行。不會包含成員與邀請紀錄。</p>
+        <p class="hint">複製下面這段文字傳給朋友，對方可以用「匯入旅行」還原成一趟新的旅行；如果換成你自己貼回「匯入旅行」，則會覆蓋更新這趟旅行的內容。不會包含成員與邀請紀錄。</p>
 
         <p v-if="loading" class="state-msg">匯出中...</p>
         <p v-else-if="loadError" class="state-msg error">{{ loadError }}</p>

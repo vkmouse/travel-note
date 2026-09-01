@@ -55,10 +55,12 @@ export interface CreateTravelPayload {
   documents?: TravelExportPayload['documents']
   info?: TravelExportPayload['info']
   checklist?: TravelExportPayload['checklist']
+  travel_id?: string
 }
 export interface CreateTravelResult {
   travel: Travel
   inserted: Record<string, number>
+  overwritten?: boolean
 }
 
 export function createTravel(payload: CreateTravelPayload): Promise<CreateTravelResult> {
@@ -93,6 +95,7 @@ export function importTravel(payload: unknown): Promise<CreateTravelResult> {
     documents: parsed.documents as TravelExportPayload['documents'],
     info: parsed.info as TravelExportPayload['info'],
     checklist: parsed.checklist as TravelExportPayload['checklist'],
+    travel_id: typeof parsed.travel_id === 'string' ? parsed.travel_id : undefined,
   })
 }
 

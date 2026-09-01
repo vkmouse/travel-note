@@ -42,6 +42,60 @@ export const onRequestGet: PagesFunction<Env, any, AuthContext> = async (context
   }
 }
 
+type DetailContent = {
+  itinerary: Record<string, unknown>[]
+  documents: Record<string, unknown>[]
+  info: Record<string, unknown>[]
+  checklist: Record<string, unknown>[]
+}
+
+// order 不吃輸入內容：一律用陣列位置編號，使用者寫匯入/範例資料時不用管 order
+function buildDetailInserts(DB: D1Database, travelId: string, userId: string, content: DetailContent) {
+  return [
+    ...content.itinerary.map((it, i) =>
+      DB.prepare(
+        `INSERT INTO itinerary (id, travel_id, user_id, "order", date, time, title, location, map_url, note)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).bind(
+        `it_${travelId}_${i}`, travelId, userId, i + 1,
+        str(it.date, 20), nullableStr(it.time, 20), str(it.title, 200),
+        nullableStr(it.location, 300), nullableStr(it.map_url, 1000), nullableStr(it.note, MAX_STRING_LEN),
+      ),
+    ),
+    ...content.documents.map((doc, i) =>
+      DB.prepare(
+        `INSERT INTO documents (id, travel_id, user_id, "order", category, title, date_start, date_end, link, note)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).bind(
+        `doc_${travelId}_${i}`, travelId, userId, i + 1,
+        str(doc.category, 50), str(doc.title, 200),
+        nullableStr(doc.date_start, 20), nullableStr(doc.date_end, 20),
+        nullableStr(doc.link, 1000), nullableStr(doc.note, MAX_STRING_LEN),
+      ),
+    ),
+    ...content.info.map((row, i) =>
+      DB.prepare(
+        `INSERT INTO info (id, travel_id, user_id, "order", category, title, link, note, is_checked)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).bind(
+        `info_${travelId}_${i}`, travelId, userId, i + 1,
+        str(row.category, 50), str(row.title, 200),
+        nullableStr(row.link, 1000), nullableStr(row.note, MAX_STRING_LEN), bool(row.is_checked) ? 1 : 0,
+      ),
+    ),
+    ...content.checklist.map((row, i) =>
+      DB.prepare(
+        `INSERT INTO checklist (id, travel_id, user_id, "order", category, title, note, is_checked)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      ).bind(
+        `chk_${travelId}_${i}`, travelId, userId, i + 1,
+        nullableStr(row.category, 50), str(row.title, 200),
+        nullableStr(row.note, MAX_STRING_LEN), bool(row.is_checked) ? 1 : 0,
+      ),
+    ),
+  ]
+}
+
 export const onRequestPost: PagesFunction<Env, any, AuthContext> = async (context) => {
   const { DB } = context.env
   const userId = context.data.userId
@@ -57,10 +111,46 @@ export const onRequestPost: PagesFunction<Env, any, AuthContext> = async (contex
     const date_end = nullableStr(body.date_end, 20) ?? ''
 
     // 附加內容一律是可選的：不帶就是建立空白旅行，帶了就一次寫入完整內容
-    const itinerary = rows(body.itinerary).filter((r) => str(r.title).trim())
-    const documents = rows(body.documents).filter((r) => str(r.title).trim())
-    const info = rows(body.info).filter((r) => str(r.title).trim())
-    const checklist = rows(body.checklist).filter((r) => str(r.title).trim())
+    const content: DetailContent = {
+      itinerary: rows(body.itinerary).filter((r) => str(r.title).trim()),
+      documents: rows(body.documents).filter((r) => str(r.title).trim()),
+      info: rows(body.info).filter((r) => str(r.title).trim()),
+      checklist: rows(body.checklist).filter((r) => str(r.title).trim()),
+    }
+
+    // 匯入時若帶了 travel_id，且目前登入者正是那趟旅行的擁有者，就走「覆蓋匯入」：
+    // 只在同一筆 travels 資料上清空重寫明細內容，id / order / travel_members 都不動，
+    // 網址、分享連結、共編旅伴因此不受影響。其他情況（id 不存在或不是擁有者）
+    // 一律靜默 fallback 成一般匯入，避免貼上的文字被用來覆蓋別人的旅行。
+    const overwriteTravelId = nullableStr(body.travel_id, 100)
+    if (overwriteTravelId) {
+      const existing = await DB.prepare(`SELECT "order" FROM travels WHERE id = ? AND user_id = ?`)
+        .bind(overwriteTravelId, userId)
+        .first<{ order: number }>()
+
+      if (existing) {
+        await DB.batch([
+          DB.prepare(`UPDATE travels SET title = ?, date_start = ?, date_end = ? WHERE id = ?`)
+            .bind(title, date_start, date_end, overwriteTravelId),
+          DB.prepare(`DELETE FROM itinerary WHERE travel_id = ?`).bind(overwriteTravelId),
+          DB.prepare(`DELETE FROM documents WHERE travel_id = ?`).bind(overwriteTravelId),
+          DB.prepare(`DELETE FROM info WHERE travel_id = ?`).bind(overwriteTravelId),
+          DB.prepare(`DELETE FROM checklist WHERE travel_id = ?`).bind(overwriteTravelId),
+          ...buildDetailInserts(DB, overwriteTravelId, userId, content),
+        ])
+
+        return jsonOk({
+          travel: { id: overwriteTravelId, title, date_start, date_end, order: existing.order },
+          inserted: {
+            itinerary: content.itinerary.length,
+            documents: content.documents.length,
+            info: content.info.length,
+            checklist: content.checklist.length,
+          },
+          overwritten: true,
+        })
+      }
+    }
 
     const { results } = await DB.prepare(
       `SELECT COALESCE(MAX("order"), 0) + 1 AS next_order FROM travels WHERE user_id = ?`,
@@ -69,65 +159,21 @@ export const onRequestPost: PagesFunction<Env, any, AuthContext> = async (contex
 
     const id = `trip_${crypto.randomUUID().slice(0, 8)}`
 
-    const statements = [
+    await DB.batch([
       DB.prepare(
         `INSERT INTO travels (id, user_id, title, date_start, date_end, "order")
          VALUES (?, ?, ?, ?, ?, ?)`,
       ).bind(id, userId, title, date_start, date_end, order),
-
-      // order 不吃輸入內容：一律用陣列位置編號，使用者寫匯入/範例資料時不用管 order
-      ...itinerary.map((it, i) =>
-        DB.prepare(
-          `INSERT INTO itinerary (id, travel_id, user_id, "order", date, time, title, location, map_url, note)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).bind(
-          `it_${id}_${i}`, id, userId, i + 1,
-          str(it.date, 20), nullableStr(it.time, 20), str(it.title, 200),
-          nullableStr(it.location, 300), nullableStr(it.map_url, 1000), nullableStr(it.note, MAX_STRING_LEN),
-        ),
-      ),
-      ...documents.map((doc, i) =>
-        DB.prepare(
-          `INSERT INTO documents (id, travel_id, user_id, "order", category, title, date_start, date_end, link, note)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).bind(
-          `doc_${id}_${i}`, id, userId, i + 1,
-          str(doc.category, 50), str(doc.title, 200),
-          nullableStr(doc.date_start, 20), nullableStr(doc.date_end, 20),
-          nullableStr(doc.link, 1000), nullableStr(doc.note, MAX_STRING_LEN),
-        ),
-      ),
-      ...info.map((row, i) =>
-        DB.prepare(
-          `INSERT INTO info (id, travel_id, user_id, "order", category, title, link, note, is_checked)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).bind(
-          `info_${id}_${i}`, id, userId, i + 1,
-          str(row.category, 50), str(row.title, 200),
-          nullableStr(row.link, 1000), nullableStr(row.note, MAX_STRING_LEN), bool(row.is_checked) ? 1 : 0,
-        ),
-      ),
-      ...checklist.map((row, i) =>
-        DB.prepare(
-          `INSERT INTO checklist (id, travel_id, user_id, "order", category, title, note, is_checked)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        ).bind(
-          `chk_${id}_${i}`, id, userId, i + 1,
-          nullableStr(row.category, 50), str(row.title, 200),
-          nullableStr(row.note, MAX_STRING_LEN), bool(row.is_checked) ? 1 : 0,
-        ),
-      ),
-    ]
-
-    await DB.batch(statements)
+      ...buildDetailInserts(DB, id, userId, content),
+    ])
 
     return jsonOk({
       travel: { id, title, date_start, date_end, order },
       inserted: {
-        itinerary: itinerary.length,
-        documents: documents.length,
-        info: info.length,
-        checklist: checklist.length,
+        itinerary: content.itinerary.length,
+        documents: content.documents.length,
+        info: content.info.length,
+        checklist: content.checklist.length,
       },
     })
   } catch (err) {

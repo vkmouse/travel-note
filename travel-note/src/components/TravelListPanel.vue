@@ -156,7 +156,7 @@ function fmtRange(t: { date_start: string | null; date_end: string | null }) {
     <DrawerForm :open="formOpen" :title="editingId ? '編輯旅行' : '新增旅行'" size="sm" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${travels.find((t) => t.id === deletingId)?.title ?? '這趟旅行'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
     <ExportDrawer :open="exportOpen" :travel-id="exportingId" :travel-title="exportingTitle" @close="exportOpen = false" />
-    <ImportTravelDrawer :open="importOpen" @close="importOpen = false" @imported="handleImported" />
+    <ImportTravelDrawer :open="importOpen" :travels="travels" @close="importOpen = false" @imported="handleImported" />
   </div>
 </template>
 

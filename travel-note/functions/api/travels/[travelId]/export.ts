@@ -36,6 +36,7 @@ export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (c
     return jsonOk({
       type: EXPORT_FORMAT,
       version: EXPORT_VERSION,
+      travel_id: travelId,
       travel: { title: travel.title, date_start: travel.date_start, date_end: travel.date_end },
       itinerary: (itinerary.results ?? []),
       documents: (documents.results ?? []).map((row) => ({ ...row, category: normalizeDocumentCategory((row as { category: string }).category) })),
