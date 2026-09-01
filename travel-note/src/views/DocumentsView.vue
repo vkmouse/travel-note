@@ -16,7 +16,7 @@ const fields: DrawerField[] = [
   { key: 'title', label: '名稱', type: 'text', required: true }, { key: 'date_start', label: '開始日期', type: 'date' },
   { key: 'date_end', label: '結束日期', type: 'date' }, { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea' },
 ]
-const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0].options?.[0] })
+const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0]?.options?.[0] })
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
 function openEdit(id: string) { editingId.value = id; actionError.value = ''; formOpen.value = true }
 function openDelete(id: string) { deletingId.value = id; actionError.value = ''; deleteOpen.value = true }

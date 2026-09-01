@@ -16,7 +16,7 @@ const props = defineProps<{
   title: string
   size: 'sm' | 'lg'
   fields: DrawerField[]
-  initialValues: Record<string, unknown>
+  initialValues: object
   busy?: boolean
 }>()
 
@@ -29,7 +29,8 @@ const form = ref<Record<string, string>>({})
 const error = ref('')
 
 function reset() {
-  form.value = Object.fromEntries(props.fields.map((field) => [field.key, String(props.initialValues[field.key] ?? '')]))
+  const values = props.initialValues as Record<string, unknown>
+  form.value = Object.fromEntries(props.fields.map((field) => [field.key, String(values[field.key] ?? '')]))
   error.value = ''
 }
 
