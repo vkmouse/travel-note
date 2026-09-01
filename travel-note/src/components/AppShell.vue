@@ -63,6 +63,7 @@ const TABS = [
         v-for="tab in TABS"
         :key="tab.name"
         :to="{ name: tab.name, params: { travelId: String(currentTravelId) } }"
+        replace
         class="nav-btn"
         :class="{ active: route.name === tab.name }"
       >
