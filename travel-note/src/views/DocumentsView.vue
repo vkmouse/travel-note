@@ -1,20 +1,23 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useDocuments } from '../composables/useDocuments'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { CATEGORY_ICON } from '../icons'
 import Icon from '../components/Icon.vue'
+import QuickLinkText from '../components/QuickLinkText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createDocument, deleteDocument, updateDocument } from '../services/api'
 
+const route = useRoute()
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useDocuments(currentTravelId)
 const formOpen = ref(false); const deleteOpen = ref(false); const editingId = ref<string | null>(null); const deletingId = ref<string | null>(null); const busy = ref(false); const actionError = ref('')
 const fields: DrawerField[] = [
   { key: 'category', label: '分類', type: 'select', required: true, options: ['住宿', '機票', '交通', '票券', '火車', '簽證', '其他'] },
   { key: 'title', label: '名稱', type: 'text', required: true }, { key: 'date_start', label: '開始日期', type: 'date' },
-  { key: 'date_end', label: '結束日期', type: 'date' }, { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea' },
+  { key: 'date_end', label: '結束日期', type: 'date' }, { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[常用資訊:緊急聯絡]] 這類寫法，備註就會出現能直接點過去的連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0]?.options?.[0] })
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
@@ -23,8 +26,14 @@ function openDelete(id: string) { deletingId.value = id; actionError.value = '';
 async function save(values: Record<string, string>) { if (!currentTravelId.value) return; busy.value = true; try { if (editingId.value) await updateDocument(currentTravelId.value, editingId.value, values); else await createDocument(currentTravelId.value, values as never); formOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 async function confirmDelete() { if (!deletingId.value || !currentTravelId.value) return; busy.value = true; try { await deleteDocument(currentTravelId.value, deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 
-const categories = computed(() => ['全部', ...new Set(items.value.map((d) => d.category))])
-const activeCategory = ref('全部')
+const queryCategory = computed(() => (typeof route.query.category === 'string' ? route.query.category : ''))
+const categories = computed(() => {
+  const set = new Set(items.value.map((d) => d.category))
+  if (queryCategory.value) set.add(queryCategory.value)
+  return ['全部', ...set]
+})
+const activeCategory = ref(queryCategory.value || '全部')
+watch(queryCategory, (c) => { if (c) activeCategory.value = c })
 
 const filtered = computed(() =>
   items.value
@@ -75,7 +84,7 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
               <div class="card-actions"><button class="icon-btn" aria-label="編輯" @click="openEdit(doc.id)"><Icon name="edit" :size="17" /></button><button class="icon-btn danger" aria-label="刪除" @click="openDelete(doc.id)"><Icon name="trash" :size="17" /></button></div>
             </div>
             <div v-if="dateRange(doc)" class="ticket-dates">{{ dateRange(doc) }}</div>
-            <div v-if="doc.note" class="ticket-note">{{ doc.note }}</div>
+            <div v-if="doc.note" class="ticket-note"><QuickLinkText :text="doc.note" /></div>
             <a v-if="doc.link" class="ticket-link" :href="doc.link" target="_blank" rel="noopener">
               <Icon name="link" :size="13" />
               開啟連結

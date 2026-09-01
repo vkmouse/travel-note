@@ -9,6 +9,7 @@ export interface DrawerField {
   type: 'text' | 'date' | 'time' | 'url' | 'textarea' | 'select'
   required?: boolean
   options?: string[]
+  hint?: string
 }
 
 const props = defineProps<{
@@ -76,6 +77,7 @@ function submit() {
           </div>
           <textarea v-else-if="field.type === 'textarea'" :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" rows="2"></textarea>
           <input v-else :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" :type="field.type" />
+          <p v-if="field.hint" class="f-hint">{{ field.hint }}</p>
         </div>
         <p v-if="error" class="drawer-error">{{ error }}</p>
       </div>
@@ -104,6 +106,7 @@ textarea.f-input { resize: vertical; min-height: 60px; }
 .f-grid-opt span { color: var(--ink); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 .f-grid-opt--active { background: var(--ink); border-color: var(--ink); color: #fff; }
 .f-grid-opt--active span { color: #fff; }
+.f-hint { margin: 5px 2px 0; color: var(--muted); font-size: 11px; }
 .drawer-error { margin: 10px 0 0; color: var(--danger); font-size: 13px; }
 .drawer-actions { display: flex; gap: 10px; flex-shrink: 0; padding: 12px 18px calc(16px + var(--safe-bottom)); border-top: 1px solid var(--line); }
 .drawer-actions button { min-height: 44px; flex: 1; border: 0; border-radius: 10px; font-weight: 600; }

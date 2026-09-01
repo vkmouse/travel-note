@@ -1,19 +1,22 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useInfo } from '../composables/useInfo'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { CATEGORY_ICON } from '../icons'
 import Icon from '../components/Icon.vue'
+import QuickLinkText from '../components/QuickLinkText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createInfo, deleteInfo, patchInfoChecked, updateInfo } from '../services/api'
 
+const route = useRoute()
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useInfo(currentTravelId)
 const formOpen = ref(false); const deleteOpen = ref(false); const editingId = ref<string | null>(null); const deletingId = ref<string | null>(null); const busy = ref(false); const actionError = ref('')
 const fields: DrawerField[] = [
   { key: 'category', label: '分類', type: 'select', required: true, options: ['工具', '靈感', '緊急聯絡'] },
-  { key: 'title', label: '標題', type: 'text', required: true }, { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea' },
+  { key: 'title', label: '標題', type: 'text', required: true }, { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[行前清單:藥品]] 這類寫法，備註就會出現能直接點過去的連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0]?.options?.[0] })
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
@@ -23,8 +26,15 @@ async function save(values: Record<string, string>) { if (!currentTravelId.value
 async function toggle(item: (typeof items.value)[number]) { if (!currentTravelId.value) return; busy.value = true; try { await patchInfoChecked(currentTravelId.value, item.id, !item.is_checked); await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 async function confirmDelete() { if (!deletingId.value || !currentTravelId.value) return; busy.value = true; try { await deleteInfo(currentTravelId.value, deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 
-const categories = computed(() => ['全部', ...new Set(items.value.map((i) => i.category))])
-const activeCategory = ref('全部')
+const queryCategory = computed(() => (typeof route.query.category === 'string' ? route.query.category : ''))
+const categories = computed(() => {
+  const set = new Set(items.value.map((i) => i.category))
+  if (queryCategory.value) set.add(queryCategory.value)
+  return ['全部', ...set]
+})
+const activeCategory = ref(queryCategory.value || '全部')
+// 從其他頁面的快速連結點過來時，網址帶的分類要覆蓋目前選取狀態
+watch(queryCategory, (c) => { if (c) activeCategory.value = c })
 
 const filtered = computed(() =>
   items.value
@@ -72,7 +82,7 @@ const grouped = computed(() => {
             </button>
             <div class="info-body">
               <p class="info-title" :class="{ done: item.is_checked }">{{ item.title }}</p>
-              <p v-if="item.note" class="info-note">{{ item.note }}</p>
+              <p v-if="item.note" class="info-note"><QuickLinkText :text="item.note" /></p>
               <a v-if="item.link" class="info-link" :href="item.link" target="_blank" rel="noopener">
                 <Icon name="link" :size="13" />
                 開啟連結

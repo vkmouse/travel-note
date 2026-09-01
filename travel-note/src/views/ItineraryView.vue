@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useItinerary } from '../composables/useItinerary'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import Icon from '../components/Icon.vue'
+import QuickLinkText from '../components/QuickLinkText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createItinerary, deleteItinerary, updateItinerary } from '../services/api'
@@ -18,7 +19,7 @@ const actionError = ref('')
 const fields: DrawerField[] = [
   { key: 'date', label: '日期', type: 'date', required: true }, { key: 'time', label: '時間', type: 'time' },
   { key: 'title', label: '行程名稱', type: 'text', required: true }, { key: 'location', label: '地點', type: 'text' },
-  { key: 'map_url', label: '地圖連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea' },
+  { key: 'map_url', label: '地圖連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[旅行文件:住宿]] 這類寫法，備註就會出現能直接點過去的連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { date: '' })
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
@@ -89,7 +90,7 @@ function dayNum(d: string) {
                 <Icon name="pin" :size="13" />
                 {{ it.location }}
               </p>
-              <p v-if="it.note" class="tl-note">{{ it.note }}</p>
+              <p v-if="it.note" class="tl-note"><QuickLinkText :text="it.note" /></p>
               <a v-if="it.map_url" class="map-link" :href="it.map_url" target="_blank" rel="noopener">
                 <Icon name="compass" :size="13" />
                 查看地圖
