@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useItinerary } from '../composables/useItinerary'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import Icon from '../components/Icon.vue'
@@ -8,6 +9,8 @@ import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createItinerary, deleteItinerary, updateItinerary } from '../services/api'
 
+const route = useRoute()
+const router = useRouter()
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useItinerary(currentTravelId)
 const formOpen = ref(false)
@@ -29,13 +32,28 @@ async function save(values: Record<string, string>) { if (!currentTravelId.value
 async function confirmDelete() { if (!deletingId.value || !currentTravelId.value) return; busy.value = true; try { await deleteItinerary(currentTravelId.value, deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 
 const days = computed(() => [...new Set(items.value.map((i) => i.date))].sort())
-const activeDay = ref<string | null>(null)
+
+// 帶著目前選的日期在網址上（用 replace，切換日期不會多堆歷史紀錄），
+// 從行程備註點快速連結跳到其他分頁後按上一頁，才能準確回到原本看的那一天，而不是重置回第一天
+const activeDay = ref<string | null>(typeof route.query.date === 'string' ? route.query.date : null)
 
 watch(
   days,
   (list) => {
+    // 資料還沒載入完成時 list 是空的，先不要動 activeDay，避免把網址上帶著的日期洗掉
+    if (list.length === 0) return
     if (!activeDay.value || !list.includes(activeDay.value)) {
       activeDay.value = list[0] ?? null
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  activeDay,
+  (day) => {
+    if (day && route.query.date !== day) {
+      router.replace({ query: { ...route.query, date: day } })
     }
   },
   { immediate: true },
