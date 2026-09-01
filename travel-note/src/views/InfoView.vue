@@ -1,54 +1,30 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed } from 'vue'
 import { useInfo } from '../composables/useInfo'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
+import { useCategoryFilter } from '../composables/useCategoryFilter'
+import { useCrudDrawer } from '../composables/useCrudDrawer'
 import { CATEGORY_ICON } from '../icons'
+import { SHARED_CATEGORIES } from '../constants/categories'
 import Icon from '../components/Icon.vue'
 import QuickLinkText from '../components/QuickLinkText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createInfo, deleteInfo, patchInfoChecked, updateInfo } from '../services/api'
 
-const route = useRoute()
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useInfo(currentTravelId)
-const formOpen = ref(false); const deleteOpen = ref(false); const editingId = ref<string | null>(null); const deletingId = ref<string | null>(null); const busy = ref(false); const actionError = ref('')
+const { formOpen, deleteOpen, editingId, deletingId, busy, actionError, openCreate, openEdit, openDelete, save, confirmDelete } =
+  useCrudDrawer(currentTravelId, { create: createInfo, update: updateInfo, remove: deleteInfo }, refresh)
 const fields: DrawerField[] = [
-  { key: 'category', label: '分類', type: 'select', required: true, options: ['工具', '靈感', '緊急聯絡'] },
+  { key: 'category', label: '分類', type: 'select', required: true, options: [...SHARED_CATEGORIES] },
   { key: 'title', label: '標題', type: 'text', required: true }, { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[行前清單:藥品]] 這類寫法，備註就會出現能直接點過去的連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0]?.options?.[0] })
-function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
-function openEdit(id: string) { editingId.value = id; actionError.value = ''; formOpen.value = true }
-function openDelete(id: string) { deletingId.value = id; actionError.value = ''; deleteOpen.value = true }
-async function save(values: Record<string, string>) { if (!currentTravelId.value) return; busy.value = true; try { if (editingId.value) await updateInfo(currentTravelId.value, editingId.value, values); else await createInfo(currentTravelId.value, values as never); formOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 async function toggle(item: (typeof items.value)[number]) { if (!currentTravelId.value) return; busy.value = true; try { await patchInfoChecked(currentTravelId.value, item.id, !item.is_checked); await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
-async function confirmDelete() { if (!deletingId.value || !currentTravelId.value) return; busy.value = true; try { await deleteInfo(currentTravelId.value, deletingId.value); deleteOpen.value = false; await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
 
-const queryCategory = computed(() => (typeof route.query.category === 'string' ? route.query.category : ''))
-const categories = computed(() => {
-  const set = new Set(items.value.map((i) => i.category))
-  if (queryCategory.value) set.add(queryCategory.value)
-  return ['全部', ...set]
-})
-const activeCategory = ref(queryCategory.value || '全部')
-// 從其他頁面的快速連結點過來時，網址帶的分類要覆蓋目前選取狀態
-watch(queryCategory, (c) => { if (c) activeCategory.value = c })
-
-const filtered = computed(() =>
-  items.value
-    .filter((i) => activeCategory.value === '全部' || i.category === activeCategory.value)
-    .sort((a, b) => a.order - b.order),
-)
-
-const grouped = computed(() => {
-  const cats = [...new Set(filtered.value.map((i) => i.category))]
-  return cats.map((cat) => ({
-    category: cat,
-    rows: filtered.value.filter((i) => i.category === cat),
-  }))
-})
+const sortedItems = computed(() => [...items.value].sort((a, b) => a.order - b.order))
+const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sortedItems, (i) => i.category)
 </script>
 
 <template>
@@ -105,62 +81,6 @@ const grouped = computed(() => {
 </template>
 
 <style scoped>
-.filter-row {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  margin-bottom: 16px;
-  scrollbar-width: none;
-}
-.filter-row::-webkit-scrollbar {
-  display: none;
-}
-.filter-chip {
-  flex-shrink: 0;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 11.5px;
-  font-weight: 600;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 11px 15px;
-  min-height: 40px;
-  display: flex;
-  align-items: center;
-  background: var(--card);
-  color: var(--ink);
-  cursor: pointer;
-}
-.filter-chip.active {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: #fff;
-}
-
-.info-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  padding: 9px 6px 9px 4px;
-  margin-bottom: 9px;
-}
-.info-title {
-  font-weight: 600;
-  font-size: 14px;
-  margin: 0;
-}
-.info-title.done {
-  text-decoration: line-through;
-  color: var(--muted);
-}
-.info-note {
-  font-size: 12.5px;
-  color: var(--muted);
-  margin-top: 3px;
-}
 .info-link {
   display: inline-flex;
   align-items: center;
@@ -171,34 +91,5 @@ const grouped = computed(() => {
   font-weight: 600;
   color: var(--slate);
   text-decoration: none;
-}
-.info-body {
-  flex: 1;
-  min-width: 0;
-  padding-top: 9px;
-}
-
-.check-dot-static {
-  padding: 9px;
-  margin: -3px 0 0 -5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.check-dot {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  border: 2px solid var(--line);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-}
-.check-dot.checked {
-  background: var(--slate);
-  border-color: var(--slate);
 }
 </style>

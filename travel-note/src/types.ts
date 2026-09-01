@@ -1,3 +1,5 @@
+import type { SHARED_CATEGORIES } from './constants/categories'
+
 export interface ApiResponse<T> {
   success: boolean
   data: T
@@ -24,7 +26,7 @@ export interface ItineraryItem {
   note: string | null
 }
 
-export type DocumentCategory = '住宿' | '機票' | '交通' | '票券' | '火車' | '簽證' | '其他'
+export type DocumentCategory = (typeof SHARED_CATEGORIES)[number]
 
 export interface DocumentItem {
   id: string
@@ -37,7 +39,7 @@ export interface DocumentItem {
   note: string | null
 }
 
-export type InfoCategory = '工具' | '靈感' | '緊急聯絡' | string
+export type InfoCategory = DocumentCategory | string
 
 export interface InfoItem {
   id: string
