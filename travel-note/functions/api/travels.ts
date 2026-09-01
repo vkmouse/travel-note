@@ -11,10 +11,6 @@ function nullableStr(value: unknown, max = MAX_STRING_LEN): string | null {
   if (value === null || value === undefined || value === '') return null
   return str(value, max)
 }
-function num(value: unknown, fallback: number): number {
-  const n = Number(value)
-  return Number.isFinite(n) ? n : fallback
-}
 function bool(value: unknown): boolean {
   return value === true
 }
@@ -79,12 +75,13 @@ export const onRequestPost: PagesFunction<Env, any, AuthContext> = async (contex
          VALUES (?, ?, ?, ?, ?, ?)`,
       ).bind(id, userId, title, date_start, date_end, order),
 
+      // order 不吃輸入內容：一律用陣列位置編號，使用者寫匯入/範例資料時不用管 order
       ...itinerary.map((it, i) =>
         DB.prepare(
           `INSERT INTO itinerary (id, travel_id, user_id, "order", date, time, title, location, map_url, note)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ).bind(
-          `it_${id}_${i}`, id, userId, num(it.order, i + 1),
+          `it_${id}_${i}`, id, userId, i + 1,
           str(it.date, 20), nullableStr(it.time, 20), str(it.title, 200),
           nullableStr(it.location, 300), nullableStr(it.map_url, 1000), nullableStr(it.note, MAX_STRING_LEN),
         ),
@@ -94,7 +91,7 @@ export const onRequestPost: PagesFunction<Env, any, AuthContext> = async (contex
           `INSERT INTO documents (id, travel_id, user_id, "order", category, title, date_start, date_end, link, note)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ).bind(
-          `doc_${id}_${i}`, id, userId, num(doc.order, i + 1),
+          `doc_${id}_${i}`, id, userId, i + 1,
           str(doc.category, 50), str(doc.title, 200),
           nullableStr(doc.date_start, 20), nullableStr(doc.date_end, 20),
           nullableStr(doc.link, 1000), nullableStr(doc.note, MAX_STRING_LEN),
@@ -105,7 +102,7 @@ export const onRequestPost: PagesFunction<Env, any, AuthContext> = async (contex
           `INSERT INTO info (id, travel_id, user_id, "order", category, title, link, note, is_checked)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         ).bind(
-          `info_${id}_${i}`, id, userId, num(row.order, i + 1),
+          `info_${id}_${i}`, id, userId, i + 1,
           str(row.category, 50), str(row.title, 200),
           nullableStr(row.link, 1000), nullableStr(row.note, MAX_STRING_LEN), bool(row.is_checked) ? 1 : 0,
         ),
@@ -115,7 +112,7 @@ export const onRequestPost: PagesFunction<Env, any, AuthContext> = async (contex
           `INSERT INTO checklist (id, travel_id, user_id, "order", category, title, note, is_checked)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         ).bind(
-          `chk_${id}_${i}`, id, userId, num(row.order, i + 1),
+          `chk_${id}_${i}`, id, userId, i + 1,
           nullableStr(row.category, 50), str(row.title, 200),
           nullableStr(row.note, MAX_STRING_LEN), bool(row.is_checked) ? 1 : 0,
         ),

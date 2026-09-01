@@ -16,19 +16,20 @@ export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (c
     ).bind(travelId).first<{ title: string; date_start: string | null; date_end: string | null }>()
     if (!travel) return jsonError('找不到這趟旅行', 404)
 
-    // 只匯出旅行本身的內容，不含成員/邀請：那些是跟帳號綁定的，匯入到別人帳號下沒有意義
+    // order 只用來排序，不進到匯出內容：陣列本身的順序就代表 order，
+    // 匯入時再依陣列位置重新編號，使用者手寫/編輯匯出文字時不用管這個欄位
     const [itinerary, documents, info, checklist] = await Promise.all([
       DB.prepare(
-        `SELECT "order", date, time, title, location, map_url, note FROM itinerary WHERE travel_id = ? ORDER BY "order" ASC`,
+        `SELECT date, time, title, location, map_url, note FROM itinerary WHERE travel_id = ? ORDER BY date ASC, "order" ASC`,
       ).bind(travelId).all(),
       DB.prepare(
-        `SELECT "order", category, title, date_start, date_end, link, note FROM documents WHERE travel_id = ? ORDER BY "order" ASC`,
+        `SELECT category, title, date_start, date_end, link, note FROM documents WHERE travel_id = ? ORDER BY "order" ASC`,
       ).bind(travelId).all(),
       DB.prepare(
-        `SELECT "order", category, title, link, note, is_checked FROM info WHERE travel_id = ? ORDER BY "order" ASC`,
+        `SELECT category, title, link, note, is_checked FROM info WHERE travel_id = ? ORDER BY "order" ASC`,
       ).bind(travelId).all(),
       DB.prepare(
-        `SELECT "order", category, title, note, is_checked FROM checklist WHERE travel_id = ? ORDER BY "order" ASC`,
+        `SELECT category, title, note, is_checked FROM checklist WHERE travel_id = ? ORDER BY "order" ASC`,
       ).bind(travelId).all(),
     ])
 

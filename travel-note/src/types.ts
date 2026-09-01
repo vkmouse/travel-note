@@ -86,12 +86,13 @@ export interface PendingInvitation {
   invited_at: string
 }
 
+// 匯出/匯入格式不帶 order：陣列順序本身就代表 order，匯入時依位置重新編號
 export interface TravelExportPayload {
   type: 'travel-note.export'
   version: number
   travel: { title: string; date_start: string | null; date_end: string | null }
-  itinerary: Array<{ order: number; date: string; time: string | null; title: string; location: string | null; map_url: string | null; note: string | null }>
-  documents: Array<{ order: number; category: string; title: string; date_start: string | null; date_end: string | null; link: string | null; note: string | null }>
-  info: Array<{ order: number; category: string; title: string; link: string | null; note: string | null; is_checked: boolean }>
-  checklist: Array<{ order: number; category: string | null; title: string; note: string | null; is_checked: boolean }>
+  itinerary: Array<{ date: string; time: string | null; title: string; location: string | null; map_url: string | null; note: string | null }>
+  documents: Array<{ category: string; title: string; date_start: string | null; date_end: string | null; link: string | null; note: string | null }>
+  info: Array<{ category: string; title: string; link: string | null; note: string | null; is_checked: boolean }>
+  checklist: Array<{ category: string | null; title: string; note: string | null; is_checked: boolean }>
 }
