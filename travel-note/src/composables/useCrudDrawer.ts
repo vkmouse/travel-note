@@ -8,7 +8,7 @@ interface CrudApi {
   remove: (travelId: string, id: string) => Promise<unknown>
 }
 
-export function useCrudDrawer(currentTravelId: Ref<string | null>, api: CrudApi, refresh: () => Promise<void>) {
+export function useCrudDrawer(currentTravelId: Ref<string | null>, api: CrudApi, refresh: () => unknown) {
   const formOpen = ref(false)
   const deleteOpen = ref(false)
   const editingId = ref<string | null>(null)
