@@ -66,7 +66,7 @@ function go(target: QuickLinkTarget, category: string) {
   white-space: nowrap;
 }
 .qlink-category {
-  font-size: 12px;
+  font-size: 9.5px;
   font-weight: 600;
   color: var(--ink);
   white-space: nowrap;
