@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { CATEGORY_ICON } from '../icons'
 import Icon from './Icon.vue'
 
@@ -10,6 +10,7 @@ export interface DrawerField {
   required?: boolean
   options?: string[]
   hint?: string
+  width?: 'full' | 'half'
 }
 
 const props = defineProps<{
@@ -37,6 +38,24 @@ function reset() {
 
 watch(() => props.open, (open) => { if (open) reset() }, { immediate: true })
 
+// 相鄰兩個 width: 'half' 的欄位併成一行，其餘欄位各自獨佔一行
+const rows = computed(() => {
+  const result: DrawerField[][] = []
+  let i = 0
+  while (i < props.fields.length) {
+    const field = props.fields[i]!
+    const next = props.fields[i + 1]
+    if (field.width === 'half' && next?.width === 'half') {
+      result.push([field, next])
+      i += 2
+    } else {
+      result.push([field])
+      i += 1
+    }
+  }
+  return result
+})
+
 function submit() {
   const missing = props.fields.find((field) => field.required && !form.value[field.key]?.trim())
   if (missing) {
@@ -57,27 +76,29 @@ function submit() {
       </div>
       <div class="drawer-body">
         <h3 class="drawer-title">{{ title }}</h3>
-        <div v-for="field in fields" :key="field.key">
-          <span v-if="field.type === 'select'" class="f-label" :id="`drawer-${field.key}-label`">{{ field.label }}</span>
-          <label v-else class="f-label" :for="`drawer-${field.key}`">{{ field.label }}</label>
-          <div v-if="field.type === 'select'" class="f-grid" role="radiogroup" :aria-labelledby="`drawer-${field.key}-label`">
-            <button
-              v-for="option in field.options"
-              :key="option"
-              type="button"
-              class="f-grid-opt"
-              :class="{ 'f-grid-opt--active': form[field.key] === option }"
-              role="radio"
-              :aria-checked="form[field.key] === option"
-              @click="form[field.key] = option"
-            >
-              <Icon :name="CATEGORY_ICON[option] || 'tag'" :size="19" />
-              <span>{{ option }}</span>
-            </button>
+        <div v-for="row in rows" :key="row.map((f) => f.key).join('-')" class="f-row" :class="{ 'f-row--split': row.length > 1 }">
+          <div v-for="field in row" :key="field.key" class="f-col">
+            <span v-if="field.type === 'select'" class="f-label" :id="`drawer-${field.key}-label`">{{ field.label }}</span>
+            <label v-else class="f-label" :for="`drawer-${field.key}`">{{ field.label }}</label>
+            <div v-if="field.type === 'select'" class="f-grid" role="radiogroup" :aria-labelledby="`drawer-${field.key}-label`">
+              <button
+                v-for="option in field.options"
+                :key="option"
+                type="button"
+                class="f-grid-opt"
+                :class="{ 'f-grid-opt--active': form[field.key] === option }"
+                role="radio"
+                :aria-checked="form[field.key] === option"
+                @click="form[field.key] = option"
+              >
+                <Icon :name="CATEGORY_ICON[option] || 'tag'" :size="19" />
+                <span>{{ option }}</span>
+              </button>
+            </div>
+            <textarea v-else-if="field.type === 'textarea'" :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" rows="2"></textarea>
+            <input v-else :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" :type="field.type" />
+            <p v-if="field.hint" class="f-hint">{{ field.hint }}</p>
           </div>
-          <textarea v-else-if="field.type === 'textarea'" :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" rows="2"></textarea>
-          <input v-else :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" :type="field.type" />
-          <p v-if="field.hint" class="f-hint">{{ field.hint }}</p>
         </div>
         <p v-if="error" class="drawer-error">{{ error }}</p>
       </div>
@@ -99,6 +120,8 @@ function submit() {
 .drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 18px 6px; }
 .drawer-title { margin: 0 0 4px; font-family: 'Space Grotesk', sans-serif; font-size: 16px; }
 .f-label { display: block; margin: 14px 0 5px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.f-row--split { display: flex; gap: 10px; }
+.f-row--split .f-col { flex: 1; min-width: 0; }
 .f-input { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); font: 14px 'Inter', sans-serif; }
 textarea.f-input { resize: vertical; min-height: 60px; }
 .f-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 8px; }

@@ -28,8 +28,8 @@ const importOpen = ref(false)
 
 const fields: DrawerField[] = [
   { key: 'title', label: '旅行名稱', type: 'text', required: true },
-  { key: 'date_start', label: '開始日期', type: 'date' },
-  { key: 'date_end', label: '結束日期', type: 'date' },
+  { key: 'date_start', label: '開始日期', type: 'date', width: 'half' },
+  { key: 'date_end', label: '結束日期', type: 'date', width: 'half' },
 ]
 
 const formValues = computed(() => travels.value.find((t) => t.id === editingId.value) ?? { title: '' })

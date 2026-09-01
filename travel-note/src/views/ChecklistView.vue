@@ -85,7 +85,7 @@ const progressPct = computed(() => (total.value ? (done.value / total.value) * 1
     </template>
     <button class="fab" aria-label="新增清單項目" @click="openCreate"><Icon name="plus" :size="23" /></button>
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
-    <DrawerForm :open="formOpen" :title="`${editingId ? '編輯' : '新增'}．行前清單`" size="sm" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
+    <DrawerForm :open="formOpen" :title="`${editingId ? '編輯' : '新增'}．行前清單`" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
   </section>
 </template>
