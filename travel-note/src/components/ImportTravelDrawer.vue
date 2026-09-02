@@ -1,18 +1,27 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { importTravel } from '../services/api'
-import type { Travel } from '../types'
 
-const props = defineProps<{ open: boolean; travels: Travel[] }>()
+const props = withDefaults(
+  defineProps<{
+    open: boolean
+    // 'create'：清單／切換旅行 drawer 用，一律建立成一趟全新旅行，不帶 travel_id
+    // 'replace'：旅行頁面 header 用，會把貼上的內容覆蓋掉目前這趟旅行
+    mode?: 'create' | 'replace'
+    travelId?: string | null
+    travelTitle?: string
+  }>(),
+  { mode: 'create', travelId: null, travelTitle: '' },
+)
 const emit = defineEmits<{ close: []; imported: [travelId: string] }>()
 
 const text = ref('')
 const busy = ref(false)
 const error = ref('')
 
-// 覆蓋是破壞性動作，先讓使用者在同一個 drawer 內確認要覆蓋哪一趟旅行，再真正送出
+// 取代模式一定要先確認，跟一般建立不同，這裡不再靠猜測貼上內容裡有沒有 travel_id，
+// 而是由「使用者是從哪個入口點進來匯入」直接決定
 const confirming = ref(false)
-const confirmTitle = ref('')
 const pendingPayload = ref<unknown>(null)
 
 watch(() => props.open, (open) => {
@@ -33,15 +42,9 @@ function parse(): unknown | null {
 function submit() {
   const parsed = parse()
   if (parsed === null) return
-
-  // 貼上的文字帶著 travel_id，而且剛好是自己擁有的旅行，才會走覆蓋流程；
-  // 其他情況一律當成一般匯入，靜默建立新旅行（實際覆蓋權限仍以後端檢查為準）
-  const travelId = (parsed as Record<string, unknown>).travel_id
-  const owned = typeof travelId === 'string' ? props.travels.find((t) => t.id === travelId && t.is_owner) : undefined
-
   error.value = ''
-  if (owned) {
-    confirmTitle.value = owned.title
+
+  if (props.mode === 'replace') {
     pendingPayload.value = parsed
     confirming.value = true
     return
@@ -54,7 +57,7 @@ async function doImport(payload: unknown) {
   busy.value = true
   error.value = ''
   try {
-    const result = await importTravel(payload)
+    const result = await importTravel(payload, props.mode === 'replace' ? (props.travelId ?? undefined) : undefined)
     emit('imported', result.travel.id)
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
@@ -67,26 +70,34 @@ async function doImport(payload: unknown) {
 
 <template>
   <div v-if="open" class="drawer-overlay" @click.self="emit('close')">
-    <section class="drawer-sheet" role="dialog" aria-modal="true" aria-label="匯入旅行">
+    <section class="drawer-sheet" role="dialog" aria-modal="true" :aria-label="mode === 'replace' ? '匯入取代這趟旅行' : '匯入旅行'">
       <div class="drawer-top"><div class="drawer-handle"></div></div>
 
       <template v-if="!confirming">
         <div class="drawer-body">
-          <h3 class="drawer-title">匯入旅行</h3>
-          <p class="hint">把朋友分享給你的匯出文字貼在下面，會建立成一趟全新的旅行，你會是這趟旅行的擁有者。如果貼的是你自己這趟旅行的匯出內容，會改成覆蓋更新這趟旅行。</p>
+          <h3 class="drawer-title">{{ mode === 'replace' ? `匯入取代「${travelTitle}」` : '匯入旅行' }}</h3>
+          <p class="hint">
+            {{
+              mode === 'replace'
+                ? '把匯出的文字貼在下面，下一步會請你再次確認：這會把目前這趟旅行的所有內容換成貼上的內容，且無法復原。'
+                : '把朋友分享給你的匯出文字貼在下面，會建立成一趟全新的旅行，你會是這趟旅行的擁有者。'
+            }}
+          </p>
           <textarea v-model="text" class="import-text" rows="10" placeholder="貼上匯出的文字…"></textarea>
           <p v-if="error" class="drawer-error">{{ error }}</p>
         </div>
         <div class="drawer-actions">
           <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">取消</button>
-          <button class="btn-primary" type="button" :disabled="busy" @click="submit">{{ busy ? '建立中…' : '建立旅行' }}</button>
+          <button class="btn-primary" type="button" :disabled="busy" @click="submit">
+            {{ mode === 'replace' ? '下一步' : (busy ? '建立中…' : '建立旅行') }}
+          </button>
         </div>
       </template>
 
       <template v-else>
         <div class="drawer-body drawer-confirm">
-          <h3>覆蓋「{{ confirmTitle }}」？</h3>
-          <p>這會把「{{ confirmTitle }}」目前的所有行程資料換成貼上的內容，且無法復原，確定要繼續嗎？</p>
+          <h3>覆蓋「{{ travelTitle }}」？</h3>
+          <p>這會把「{{ travelTitle }}」目前的所有行程資料換成貼上的內容，且無法復原，確定要繼續嗎？</p>
           <p v-if="error" class="drawer-error">{{ error }}</p>
         </div>
         <div class="drawer-actions">

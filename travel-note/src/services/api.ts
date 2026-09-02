@@ -83,8 +83,10 @@ export function exportTravel(travelId: string): Promise<TravelExportPayload> {
   return getJson(`/api/travels/${travelId}/export`, '匯出失敗')
 }
 // 使用者貼上的是匯出格式（{ travel: {...}, itinerary, documents, info, checklist }），
-// 這裡轉成 createTravel() 需要的扁平 payload，一樣打 POST /api/travels
-export function importTravel(payload: unknown): Promise<CreateTravelResult> {
+// 這裡轉成 createTravel() 需要的扁平 payload，一樣打 POST /api/travels。
+// travelId 由呼叫端明確傳入：清單／切換旅行 drawer 匯入時不傳（一律建立新旅行），
+// 旅行頁面 header 的「匯入取代」則會傳目前這趟旅行的 id（後端會再驗證擁有權才真的覆蓋）
+export function importTravel(payload: unknown, travelId?: string): Promise<CreateTravelResult> {
   const parsed = (payload ?? {}) as Record<string, unknown>
   const travel = (parsed.travel ?? {}) as Record<string, unknown>
   return createTravel({
@@ -95,7 +97,7 @@ export function importTravel(payload: unknown): Promise<CreateTravelResult> {
     documents: parsed.documents as TravelExportPayload['documents'],
     info: parsed.info as TravelExportPayload['info'],
     checklist: parsed.checklist as TravelExportPayload['checklist'],
-    travel_id: typeof parsed.travel_id === 'string' ? parsed.travel_id : undefined,
+    travel_id: travelId,
   })
 }
 

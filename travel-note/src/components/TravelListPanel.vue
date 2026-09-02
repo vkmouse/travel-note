@@ -5,7 +5,6 @@ import { useCurrentTravel } from '../composables/useCurrentTravel'
 import Icon from './Icon.vue'
 import DrawerForm, { type DrawerField } from './DrawerForm.vue'
 import DrawerConfirm from './DrawerConfirm.vue'
-import ExportDrawer from './ExportDrawer.vue'
 import ImportTravelDrawer from './ImportTravelDrawer.vue'
 import { createTravel, deleteTravel, loadSampleTravel, updateTravel } from '../services/api'
 
@@ -22,8 +21,6 @@ const busy = ref(false)
 const sampleBusy = ref(false)
 const actionError = ref('')
 
-const exportOpen = ref(false)
-const exportingId = ref<string | null>(null)
 const importOpen = ref(false)
 
 const fields: DrawerField[] = [
@@ -33,12 +30,10 @@ const fields: DrawerField[] = [
 ]
 
 const formValues = computed(() => travels.value.find((t) => t.id === editingId.value) ?? { title: '' })
-const exportingTitle = computed(() => travels.value.find((t) => t.id === exportingId.value)?.title ?? '')
 
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
 function openEdit(id: string) { editingId.value = id; actionError.value = ''; formOpen.value = true }
 function openDelete(id: string) { deletingId.value = id; actionError.value = ''; deleteOpen.value = true }
-function openExport(id: string) { exportingId.value = id; exportOpen.value = true }
 
 async function handleImported(travelId: string) {
   importOpen.value = false
@@ -134,7 +129,6 @@ function fmtRange(t: { date_start: string | null; date_end: string | null }) {
           </div>
           <div class="card-actions" @click.stop>
             <button class="icon-btn" aria-label="編輯" @click="openEdit(t.id)"><Icon name="edit" :size="17" /></button>
-            <button class="icon-btn" aria-label="匯出" @click="openExport(t.id)"><Icon name="download" :size="17" /></button>
             <!-- 刪除整趟旅行只有擁有者能做 -->
             <button v-if="t.is_owner" class="icon-btn danger" aria-label="刪除" @click="openDelete(t.id)"><Icon name="trash" :size="17" /></button>
           </div>
@@ -155,8 +149,7 @@ function fmtRange(t: { date_start: string | null; date_end: string | null }) {
 
     <DrawerForm :open="formOpen" :title="editingId ? '編輯旅行' : '新增旅行'" size="sm" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${travels.find((t) => t.id === deletingId)?.title ?? '這趟旅行'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
-    <ExportDrawer :open="exportOpen" :travel-id="exportingId" :travel-title="exportingTitle" @close="exportOpen = false" />
-    <ImportTravelDrawer :open="importOpen" :travels="travels" @close="importOpen = false" @imported="handleImported" />
+    <ImportTravelDrawer :open="importOpen" @close="importOpen = false" @imported="handleImported" />
   </div>
 </template>
 

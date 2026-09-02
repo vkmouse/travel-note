@@ -118,10 +118,10 @@ export const onRequestPost: PagesFunction<Env, any, AuthContext> = async (contex
       checklist: rows(body.checklist).filter((r) => str(r.title).trim()),
     }
 
-    // 匯入時若帶了 travel_id，且目前登入者正是那趟旅行的擁有者，就走「覆蓋匯入」：
-    // 只在同一筆 travels 資料上清空重寫明細內容，id / order / travel_members 都不動，
-    // 網址、分享連結、共編旅伴因此不受影響。其他情況（id 不存在或不是擁有者）
-    // 一律靜默 fallback 成一般匯入，避免貼上的文字被用來覆蓋別人的旅行。
+    // 是否覆蓋現有旅行，完全看有沒有帶 travel_id：這個欄位只會由前端在「旅行頁面 header 匯入（取代目前旅行）」
+    // 這個入口明確帶入，一般的匯入（清單／切換旅行 drawer）或匯出格式本身都不會有這欄位。
+    // 這裡仍然檢查 user_id 擁有權才會真的覆蓋，避免猜到別人的 travel_id 也能亂改。
+    // 覆蓋只清空重寫明細內容，id / order / travel_members 都不動，網址、分享連結、共編旅伴因此不受影響。
     const overwriteTravelId = nullableStr(body.travel_id, 100)
     if (overwriteTravelId) {
       const existing = await DB.prepare(`SELECT "order" FROM travels WHERE id = ? AND user_id = ?`)

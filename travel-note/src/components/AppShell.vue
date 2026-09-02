@@ -1,17 +1,21 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
+import { useQueryClient } from '@tanstack/vue-query'
 import Icon from './Icon.vue'
 import TravelPickerView from '../views/TravelPickerView.vue'
 import TravelSwitchDrawer from './TravelSwitchDrawer.vue'
 import MembersDrawer from './MembersDrawer.vue'
 import MyInvitationsDrawer from './MyInvitationsDrawer.vue'
+import ExportDrawer from './ExportDrawer.vue'
+import ImportTravelDrawer from './ImportTravelDrawer.vue'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { useTravels } from '../composables/useTravels'
 import { useMyInvitations } from '../composables/useMyInvitations'
 import { useTravelPrefetch } from '../composables/useTravelPrefetch'
 
 const route = useRoute()
+const queryClient = useQueryClient()
 
 const { currentTravelId } = useCurrentTravel()
 const { travels, refresh: refreshTravels } = useTravels()
@@ -24,11 +28,26 @@ const currentTravel = computed(() => travels.value.find((t) => t.id === currentT
 const switcherOpen = ref(false)
 const membersOpen = ref(false)
 const invitationsOpen = ref(false)
+const exportOpen = ref(false)
+const importReplaceOpen = ref(false)
 
 // 待處理邀請角標數字，跟 TravelPickerView 共用同一份 vue-query 快取
 const { invitations: myInvitations } = useMyInvitations()
 
 function handleMembersChanged() {
+  refreshTravels()
+}
+
+// 匯入取代直接改掉目前這趟旅行的四個分頁內容，這裡不像 useCrudDrawer 系列各自有自己的 refresh()，
+// 要手動照各 composable 的 queryKey 逐一 invalidate，才能讓四個分頁重新抓到新資料
+async function handleReplaced(travelId: string) {
+  importReplaceOpen.value = false
+  await Promise.allSettled([
+    queryClient.invalidateQueries({ queryKey: ['itinerary', travelId] }),
+    queryClient.invalidateQueries({ queryKey: ['documents', travelId] }),
+    queryClient.invalidateQueries({ queryKey: ['info', travelId] }),
+    queryClient.invalidateQueries({ queryKey: ['checklist', travelId] }),
+  ])
   refreshTravels()
 }
 
@@ -49,6 +68,12 @@ const TABS = [
         <span class="trip-title">{{ currentTravel?.title ?? '' }}<Icon name="chevrondown" :size="13" /></span>
       </button>
       <div class="header-actions">
+        <button class="header-icon-btn" type="button" aria-label="匯出這趟旅行" @click="exportOpen = true">
+          <Icon name="download" :size="19" />
+        </button>
+        <button class="header-icon-btn" type="button" aria-label="匯入取代這趟旅行" @click="importReplaceOpen = true">
+          <Icon name="upload" :size="19" />
+        </button>
         <button class="header-icon-btn" type="button" aria-label="成員與邀請" @click="membersOpen = true">
           <Icon name="users" :size="19" />
         </button>
@@ -87,6 +112,15 @@ const TABS = [
       @changed="handleMembersChanged"
     />
     <MyInvitationsDrawer :open="invitationsOpen" @close="invitationsOpen = false" />
+    <ExportDrawer :open="exportOpen" :travel-id="currentTravelId" :travel-title="currentTravel?.title ?? ''" @close="exportOpen = false" />
+    <ImportTravelDrawer
+      :open="importReplaceOpen"
+      mode="replace"
+      :travel-id="currentTravelId"
+      :travel-title="currentTravel?.title ?? ''"
+      @close="importReplaceOpen = false"
+      @imported="handleReplaced"
+    />
   </div>
 </template>
 
@@ -107,7 +141,7 @@ header {
   flex-shrink: 0;
   padding: calc(var(--safe-top) + 7px) 18px 7px;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
@@ -121,7 +155,7 @@ header {
   align-items: flex-start;
   gap: 2px;
   cursor: pointer;
-  min-height: 44px;
+  min-height: 38px;
   justify-content: center;
 }
 .app-name {
