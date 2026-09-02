@@ -191,12 +191,13 @@ header {
 main {
   flex: 1;
   overflow-y: auto;
-  padding: 18px 16px calc(88px + var(--safe-bottom));
+  padding: 18px 16px calc(102px + var(--safe-bottom));
 }
 
 nav {
   position: fixed;
-  bottom: 0;
+  /* 從貼齊 0 往上推一點，避免緊貼手機實體邊緣（尤其是有 home indicator 的機型）導致最下排按鈕不好點 */
+  bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
@@ -204,6 +205,7 @@ nav {
   background: var(--ink);
   display: flex;
   padding: 7px 6px calc(9px + var(--safe-bottom));
+  box-shadow: 0 8px 24px rgba(22, 34, 58, .28);
   z-index: 10;
 }
 .nav-btn {

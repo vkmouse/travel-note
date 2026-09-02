@@ -96,10 +96,7 @@ function submit() {
         <div class="form-panel">
           <div v-for="row in rows" :key="row.map((f) => f.key).join('-')" class="f-row" :class="{ 'f-row--split': row.length > 1 }">
             <div v-for="field in row" :key="field.key" class="f-col">
-              <!-- 容易混淆的欄位（分類）保留行內小標籤；其餘欄位靠 placeholder 說明即可 -->
-              <span v-if="field.type === 'select'" class="f-label" :id="`drawer-${field.key}-label`">{{ field.label }}</span>
-
-              <div v-if="field.type === 'select'" class="f-grid" role="radiogroup" :aria-labelledby="`drawer-${field.key}-label`">
+              <div v-if="field.type === 'select'" class="f-grid" role="radiogroup" :aria-label="field.label">
                 <button
                   v-for="option in field.options"
                   :key="option"
@@ -156,9 +153,8 @@ function submit() {
 
 <style scoped>
 /* 殼層（overlay/sheet/handle/actions/輸入框/分類網格/form-panel 底盤）已搬到 style.css 全域共用，
-   這裡只留表單排版細節。label 的上邊距原本用來撐開跟前一欄位的間距，
-   現在改由 .f-row + .f-row 統一負責，label 本身只留下與自己欄位的間距。 */
-.f-label { display: block; margin: 0 0 5px; color: var(--muted); font-size: 12px; font-weight: 600; }
+   這裡只留表單排版細節。原本靠 label 的上邊距撐開跟前一欄位的間距，
+   現在所有欄位都不顯示文字 label，改由 .f-row + .f-row 統一負責間距。 */
 .f-row + .f-row { margin-top: var(--space-3); }
 .f-row--split { display: flex; gap: var(--space-2); }
 .f-row--split .f-col { flex: 1; min-width: 0; }
