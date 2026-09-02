@@ -105,9 +105,10 @@ function submit() {
             <textarea v-else-if="field.type === 'textarea'" :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" rows="2"></textarea>
             <CalendarPicker
               v-else-if="field.type === 'date'"
-              v-model="form[field.key]"
+              :model-value="form[field.key] ?? ''"
               :show-time="!!field.pairedTimeKey"
               :time="field.pairedTimeKey ? form[field.pairedTimeKey] : undefined"
+              @update:model-value="(v) => (form[field.key] = v)"
               @update:time="(v) => { if (field.pairedTimeKey) form[field.pairedTimeKey] = v }"
             />
             <input v-else :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" :type="field.type" />
