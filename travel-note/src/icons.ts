@@ -39,6 +39,8 @@ export const ICONS: Record<string, string> = {
   upload:
     '<path d="M5 12v4.3A1.8 1.8 0 0 0 6.8 18.1h10.4A1.8 1.8 0 0 0 19 16.3V12"/><path d="M12 3.5v11"/><path d="M8.3 11.3L12 15l3.7-3.7"/>',
   copy: '<rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5V5.8A1.8 1.8 0 0 0 13.7 4H5.8A1.8 1.8 0 0 0 4 5.8v7.9a1.8 1.8 0 0 0 1.8 1.8h2.7"/>',
+  selectall:
+    '<path d="M5 9V6.5A1.5 1.5 0 0 1 6.5 5H9"/><path d="M15 5h2.5A1.5 1.5 0 0 1 19 6.5V9"/><path d="M19 15v2.5A1.5 1.5 0 0 1 17.5 19H15"/><path d="M9 19H6.5A1.5 1.5 0 0 1 5 17.5V15"/>',
 }
 
 export const ICONS_FILLED: Record<string, string> = {

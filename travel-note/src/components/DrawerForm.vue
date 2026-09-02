@@ -35,8 +35,10 @@ const emit = defineEmits<{
 
 const form = ref<Record<string, string>>({})
 const error = ref('')
-// 存放各欄位 textarea 的 DOM 節點，不需要響應式，純粹用來在打開/編輯時觸發一次自動撐高
+// 存放各欄位 textarea 的 DOM 節點，不需要響應式，純粹用來在打開/編輯時觸發一次自動撐高，
+// 以及全選/複製按鈕操作對應的 textarea
 const textareaRefs: Record<string, HTMLTextAreaElement | null> = {}
+const copiedKey = ref('')
 
 function reset() {
   const values = props.initialValues as Record<string, unknown>
@@ -98,6 +100,20 @@ function placeholderFor(field: DrawerField): string {
   return field.label
 }
 
+function selectAll(key: string) {
+  textareaRefs[key]?.select()
+}
+
+async function copyField(key: string) {
+  try {
+    await navigator.clipboard.writeText(form.value[key] ?? '')
+    copiedKey.value = key
+    setTimeout(() => { if (copiedKey.value === key) copiedKey.value = '' }, 1200)
+  } catch {
+    // clipboard API 在非 https 或權限被拒時會拋錯，靜默失敗即可，不影響編輯本身
+  }
+}
+
 function submit() {
   const missing = props.fields.find((field) => field.required && !form.value[field.key]?.trim())
   if (missing) {
@@ -135,16 +151,25 @@ function submit() {
                   <span>{{ option }}</span>
                 </button>
               </div>
-              <textarea
-                v-else-if="field.type === 'textarea'"
-                :id="`drawer-${field.key}`"
-                :ref="(el) => { textareaRefs[field.key] = el as HTMLTextAreaElement | null }"
-                v-model="form[field.key]"
-                class="f-input"
-                rows="2"
-                :placeholder="placeholderFor(field)"
-                @input="autoGrow"
-              ></textarea>
+              <div v-else-if="field.type === 'textarea'" class="f-textarea-wrap">
+                <div class="f-textarea-tools">
+                  <button type="button" class="f-tool-btn" aria-label="全選" @click="selectAll(field.key)">
+                    <Icon name="selectall" :size="15" />
+                  </button>
+                  <button type="button" class="f-tool-btn" aria-label="複製" @click="copyField(field.key)">
+                    <Icon :name="copiedKey === field.key ? 'check' : 'copy'" :size="15" />
+                  </button>
+                </div>
+                <textarea
+                  :id="`drawer-${field.key}`"
+                  :ref="(el) => { textareaRefs[field.key] = el as HTMLTextAreaElement | null }"
+                  v-model="form[field.key]"
+                  class="f-input"
+                  rows="2"
+                  :placeholder="placeholderFor(field)"
+                  @input="autoGrow"
+                ></textarea>
+              </div>
               <CalendarPicker
                 v-else-if="field.type === 'date'"
                 :model-value="form[field.key] ?? ''"
@@ -185,4 +210,9 @@ function submit() {
 .f-row--split { display: flex; gap: var(--space-2); }
 .f-row--split .f-col { flex: 1; min-width: 0; }
 .f-hint { margin: 5px 2px 0; color: var(--muted); font-size: 11px; }
+.f-textarea-wrap { position: relative; }
+.f-textarea-wrap textarea.f-input { padding-right: 68px; }
+.f-textarea-tools { position: absolute; top: 6px; right: 6px; display: flex; gap: 2px; z-index: 1; }
+.f-tool-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: var(--card); color: var(--icon-muted); }
+.f-tool-btn:active { background: var(--paper); }
 </style>
