@@ -35,7 +35,10 @@ function go(target: QuickLinkTarget, category: string) {
             <strong v-else-if="seg.type === 'bold'">{{ seg.value }}</strong>
             <em v-else-if="seg.type === 'italic'">{{ seg.value }}</em>
             <code v-else-if="seg.type === 'code'" class="note-code">{{ seg.value }}</code>
-            <a v-else-if="seg.type === 'link'" :href="seg.href" target="_blank" rel="noopener noreferrer" class="note-link">{{ seg.text }}</a>
+            <a v-else-if="seg.type === 'link'" :href="seg.href" target="_blank" rel="noopener noreferrer" class="note-link">
+              <Icon name="link" :size="12" class="note-link-icon" />
+              <span class="note-link-text">{{ seg.text }}</span>
+            </a>
             <button v-else-if="seg.type === 'quicklink'" type="button" class="qlink-chip" @click.stop="go(seg.target, seg.category)">
               <Icon :name="TARGET_ICON[seg.target]" :size="12" class="qlink-icon" />
               <span class="qlink-section">{{ QUICK_LINK_LABELS[seg.target] }}</span>
@@ -51,7 +54,10 @@ function go(target: QuickLinkTarget, category: string) {
             <strong v-else-if="seg.type === 'bold'">{{ seg.value }}</strong>
             <em v-else-if="seg.type === 'italic'">{{ seg.value }}</em>
             <code v-else-if="seg.type === 'code'" class="note-code">{{ seg.value }}</code>
-            <a v-else-if="seg.type === 'link'" :href="seg.href" target="_blank" rel="noopener noreferrer" class="note-link">{{ seg.text }}</a>
+            <a v-else-if="seg.type === 'link'" :href="seg.href" target="_blank" rel="noopener noreferrer" class="note-link">
+              <Icon name="link" :size="12" class="note-link-icon" />
+              <span class="note-link-text">{{ seg.text }}</span>
+            </a>
             <button v-else-if="seg.type === 'quicklink'" type="button" class="qlink-chip" @click.stop="go(seg.target, seg.category)">
               <Icon :name="TARGET_ICON[seg.target]" :size="12" class="qlink-icon" />
               <span class="qlink-section">{{ QUICK_LINK_LABELS[seg.target] }}</span>
@@ -90,9 +96,27 @@ function go(target: QuickLinkTarget, category: string) {
   border-radius: 4px;
 }
 .note-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 2px;
+  padding: 3px 9px 3px 7px;
+  border: 1px solid rgba(169, 121, 44, 0.32);
+  border-radius: 999px;
+  background: rgba(169, 121, 44, 0.08);
   color: var(--brass);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration: none;
+  vertical-align: -3px;
+}
+.note-link-icon {
+  color: var(--brass);
+  flex-shrink: 0;
+}
+.note-link-text {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
 }
 .qlink-chip {
   display: inline-flex;
