@@ -18,7 +18,7 @@ const { formOpen, deleteOpen, editingId, deletingId, busy, actionError, openCrea
   useCrudDrawer(currentTravelId, { create: createChecklist, update: updateChecklist, remove: deleteChecklist }, refresh)
 const fields: DrawerField[] = [
   { key: 'category', label: '分類', type: 'select', required: true, options: [...SHARED_CATEGORIES] },
-  { key: 'title', label: '項目', type: 'text', required: true }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[旅行文件:機票]] 這類寫法，備註就會出現能直接點過去的連結' },
+  { key: 'title', label: '項目', type: 'text', required: true, placeholder: '輸入項目名稱' }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[旅行文件:機票]] 這類寫法，備註就會出現能直接點過去的連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0]?.options?.[0] })
 async function toggle(item: (typeof items.value)[number]) { if (!currentTravelId.value) return; busy.value = true; try { await patchChecklistChecked(currentTravelId.value, item.id, !item.is_checked); await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }

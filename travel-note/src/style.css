@@ -3,6 +3,8 @@
 :root {
   --ink: #16223a;
   --paper: #f5f2ea;
+  /* 表單底盤用色：比 --paper 深一階，讓白色輸入列/pill 在上面形成凹槽對比 */
+  --paper-dark: #ece4d1;
   --card: #ffffff;
   --brass: #a9792c;
   --slate: #4f6b87;
@@ -264,6 +266,33 @@ textarea.f-input {
 }
 .f-grid-opt--active span {
   color: #fff;
+}
+
+/* 表單底盤：DrawerForm 把整組欄位收進同一塊「稍深」的容器，取代逐欄各自浮在 --paper 上的排法。
+   容器內的白色輸入列／pill／分類選項都要換成 --card 才能跟底盤區分出凹槽感；
+   .f-grid-opt 用 :not(--active) 是因為底色覆寫的優先權比 --active 的實色填滿高，
+   不排除 active 的話選取狀態會被誤蓋成白底。 */
+.form-panel {
+  background: var(--paper-dark);
+  border-radius: var(--r-lg);
+  padding: var(--space-3);
+}
+.form-panel .f-input {
+  background: var(--card);
+}
+.form-panel .f-grid-opt:not(.f-grid-opt--active) {
+  background: var(--card);
+}
+/* CalendarPicker 內的 ExpandableField：摺疊摘要列跟展開後都維持 --card，
+   展開後的月曆本體則換回 --paper，跟摘要列的白色做出深淺區隔 */
+.form-panel .expandable-field {
+  background: var(--card);
+}
+.form-panel .expandable-field.expanded {
+  background: var(--card);
+}
+.form-panel .expandable-body {
+  background: var(--paper);
 }
 
 .section-label {

@@ -21,7 +21,7 @@ const busy = ref(false)
 const actionError = ref('')
 const fields: DrawerField[] = [
   { key: 'date', label: '日期時間', type: 'date', required: true, pairedTimeKey: 'time' }, { key: 'time', label: '時間', type: 'time' },
-  { key: 'title', label: '行程名稱', type: 'text', required: true }, { key: 'location', label: '地點', type: 'text' },
+  { key: 'title', label: '行程名稱', type: 'text', required: true, placeholder: '輸入行程名稱' }, { key: 'location', label: '地點', type: 'text' },
   { key: 'map_url', label: '地圖連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[旅行文件:住宿]] 這類寫法，備註就會出現能直接點過去的連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { date: '' })

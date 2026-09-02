@@ -14,6 +14,9 @@ export interface DrawerField {
   width?: 'full' | 'half'
   // 有值時，此日期欄位改用同一顆 CalendarPicker 一併選時間，對應的 time 欄位就不再獨立顯示
   pairedTimeKey?: string
+  // 意義明確的欄位（標題、地點、連結…）拿掉頂部 label，改用 placeholder 說明；
+  // 不指定時，text/textarea 退回用 label 本身當 placeholder，url 則退回「貼上連結」
+  placeholder?: string
 }
 
 const props = defineProps<{
@@ -64,6 +67,13 @@ const rows = computed(() => {
   return result
 })
 
+// 意義明確的欄位不再顯示 label，input 本身的 placeholder 就要說明清楚是什麼欄位
+function placeholderFor(field: DrawerField): string {
+  if (field.placeholder) return field.placeholder
+  if (field.type === 'url') return '貼上連結'
+  return field.label
+}
+
 function submit() {
   const missing = props.fields.find((field) => field.required && !form.value[field.key]?.trim())
   if (missing) {
@@ -83,36 +93,67 @@ function submit() {
       </div>
       <div class="drawer-body">
         <h3 class="drawer-title">{{ title }}</h3>
-        <div v-for="row in rows" :key="row.map((f) => f.key).join('-')" class="f-row" :class="{ 'f-row--split': row.length > 1 }">
-          <div v-for="field in row" :key="field.key" class="f-col">
-            <span v-if="field.type === 'select'" class="f-label" :id="`drawer-${field.key}-label`">{{ field.label }}</span>
-            <label v-else class="f-label" :for="`drawer-${field.key}`">{{ field.label }}</label>
-            <div v-if="field.type === 'select'" class="f-grid" role="radiogroup" :aria-labelledby="`drawer-${field.key}-label`">
-              <button
-                v-for="option in field.options"
-                :key="option"
-                type="button"
-                class="f-grid-opt"
-                :class="{ 'f-grid-opt--active': form[field.key] === option }"
-                role="radio"
-                :aria-checked="form[field.key] === option"
-                @click="form[field.key] = option"
-              >
-                <Icon :name="CATEGORY_ICON[option] || 'tag'" :size="19" />
-                <span>{{ option }}</span>
-              </button>
+        <div class="form-panel">
+          <div v-for="row in rows" :key="row.map((f) => f.key).join('-')" class="f-row" :class="{ 'f-row--split': row.length > 1 }">
+            <div v-for="field in row" :key="field.key" class="f-col">
+              <!-- 容易混淆的欄位（分類、日期範圍）保留精簡行內小標籤；其餘欄位靠 placeholder 說明即可 -->
+              <span v-if="field.type === 'select'" class="f-label" :id="`drawer-${field.key}-label`">{{ field.label }}</span>
+              <span v-else-if="field.type === 'date' && field.width === 'half'" class="f-label f-label--compact">{{ field.label }}</span>
+
+              <div v-if="field.type === 'select'" class="f-grid" role="radiogroup" :aria-labelledby="`drawer-${field.key}-label`">
+                <button
+                  v-for="option in field.options"
+                  :key="option"
+                  type="button"
+                  class="f-grid-opt"
+                  :class="{ 'f-grid-opt--active': form[field.key] === option }"
+                  role="radio"
+                  :aria-checked="form[field.key] === option"
+                  @click="form[field.key] = option"
+                >
+                  <Icon :name="CATEGORY_ICON[option] || 'tag'" :size="19" />
+                  <span>{{ option }}</span>
+                </button>
+              </div>
+              <textarea
+                v-else-if="field.type === 'textarea'"
+                :id="`drawer-${field.key}`"
+                v-model="form[field.key]"
+                class="f-input"
+                rows="2"
+                :placeholder="placeholderFor(field)"
+              ></textarea>
+              <CalendarPicker
+                v-else-if="field.type === 'date'"
+                :model-value="form[field.key] ?? ''"
+                :show-time="!!field.pairedTimeKey"
+                :time="field.pairedTimeKey ? form[field.pairedTimeKey] : undefined"
+                @update:model-value="(v) => (form[field.key] = v)"
+                @update:time="(v) => { if (field.pairedTimeKey) form[field.pairedTimeKey] = v }"
+              />
+              <!-- 連結類欄位不用文字說明，靠輸入框左側的連結圖示就看得出是網址欄 -->
+              <div v-else-if="field.type === 'url'" class="f-input-wrap">
+                <Icon name="link" :size="16" class="f-input-icon" />
+                <input
+                  :id="`drawer-${field.key}`"
+                  v-model="form[field.key]"
+                  class="f-input-plain"
+                  type="url"
+                  :placeholder="placeholderFor(field)"
+                  :aria-label="field.label"
+                />
+              </div>
+              <input
+                v-else
+                :id="`drawer-${field.key}`"
+                v-model="form[field.key]"
+                class="f-input"
+                :type="field.type"
+                :placeholder="placeholderFor(field)"
+                :aria-label="field.label"
+              />
+              <p v-if="field.hint" class="f-hint">{{ field.hint }}</p>
             </div>
-            <textarea v-else-if="field.type === 'textarea'" :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" rows="2"></textarea>
-            <CalendarPicker
-              v-else-if="field.type === 'date'"
-              :model-value="form[field.key] ?? ''"
-              :show-time="!!field.pairedTimeKey"
-              :time="field.pairedTimeKey ? form[field.pairedTimeKey] : undefined"
-              @update:model-value="(v) => (form[field.key] = v)"
-              @update:time="(v) => { if (field.pairedTimeKey) form[field.pairedTimeKey] = v }"
-            />
-            <input v-else :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" :type="field.type" />
-            <p v-if="field.hint" class="f-hint">{{ field.hint }}</p>
           </div>
         </div>
         <p v-if="error" class="drawer-error">{{ error }}</p>
@@ -126,9 +167,45 @@ function submit() {
 </template>
 
 <style scoped>
-/* 殼層（overlay/sheet/handle/actions/輸入框/分類網格）已搬到 style.css 全域共用，這裡只留表單排版細節 */
-.f-label { display: block; margin: 14px 0 5px; color: var(--muted); font-size: 12px; font-weight: 600; }
-.f-row--split { display: flex; gap: 10px; }
+/* 殼層（overlay/sheet/handle/actions/輸入框/分類網格/form-panel 底盤）已搬到 style.css 全域共用，
+   這裡只留表單排版細節。label 的上邊距原本用來撐開跟前一欄位的間距，
+   現在改由 .f-row + .f-row 統一負責，label 本身只留下與自己欄位的間距。 */
+.f-label { display: block; margin: 0 0 5px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.f-label--compact { font-size: 11px; margin-bottom: 4px; }
+.f-row + .f-row { margin-top: var(--space-3); }
+.f-row--split { display: flex; gap: var(--space-2); }
 .f-row--split .f-col { flex: 1; min-width: 0; }
 .f-hint { margin: 5px 2px 0; color: var(--muted); font-size: 11px; }
+
+/* 連結類欄位：圖示 + 輸入框共用同一個凹槽，不需要另外的文字 label 說明這是網址欄。
+   在 form-panel 底盤裡預設就是白色（--card），跟其他白色輸入列一致。 */
+.f-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  background: var(--card);
+  box-shadow: var(--shadow-sunken);
+}
+.f-input-icon {
+  color: var(--icon-muted);
+  flex-shrink: 0;
+}
+.f-input-plain {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  font: 16px var(--font-body);
+  color: var(--ink);
+  padding: 0;
+  box-shadow: none;
+}
+.f-input-plain:focus {
+  outline: none;
+}
+.f-input-plain::placeholder {
+  color: var(--muted);
+}
 </style>
