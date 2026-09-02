@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { CATEGORY_ICON } from '../icons'
 import Icon from './Icon.vue'
+import CalendarPicker from './CalendarPicker.vue'
 
 export interface DrawerField {
   key: string
@@ -11,6 +12,8 @@ export interface DrawerField {
   options?: string[]
   hint?: string
   width?: 'full' | 'half'
+  // 有值時，此日期欄位改用同一顆 CalendarPicker 一併選時間，對應的 time 欄位就不再獨立顯示
+  pairedTimeKey?: string
 }
 
 const props = defineProps<{
@@ -38,13 +41,18 @@ function reset() {
 
 watch(() => props.open, (open) => { if (open) reset() }, { immediate: true })
 
+// 被 pairedTimeKey 指到的欄位（如 time）已經併進對應日期的 CalendarPicker，不再單獨佔一行
+const pairedTimeKeys = computed(() => new Set(props.fields.map((f) => f.pairedTimeKey).filter((k): k is string => !!k)))
+const visibleFields = computed(() => props.fields.filter((f) => !pairedTimeKeys.value.has(f.key)))
+
 // 相鄰兩個 width: 'half' 的欄位併成一行，其餘欄位各自獨佔一行
 const rows = computed(() => {
   const result: DrawerField[][] = []
+  const list = visibleFields.value
   let i = 0
-  while (i < props.fields.length) {
-    const field = props.fields[i]!
-    const next = props.fields[i + 1]
+  while (i < list.length) {
+    const field = list[i]!
+    const next = list[i + 1]
     if (field.width === 'half' && next?.width === 'half') {
       result.push([field, next])
       i += 2
@@ -95,6 +103,13 @@ function submit() {
               </button>
             </div>
             <textarea v-else-if="field.type === 'textarea'" :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" rows="2"></textarea>
+            <CalendarPicker
+              v-else-if="field.type === 'date'"
+              v-model="form[field.key]"
+              :show-time="!!field.pairedTimeKey"
+              :time="field.pairedTimeKey ? form[field.pairedTimeKey] : undefined"
+              @update:time="(v) => { if (field.pairedTimeKey) form[field.pairedTimeKey] = v }"
+            />
             <input v-else :id="`drawer-${field.key}`" v-model="form[field.key]" class="f-input" :type="field.type" />
             <p v-if="field.hint" class="f-hint">{{ field.hint }}</p>
           </div>
