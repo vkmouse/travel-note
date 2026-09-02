@@ -34,8 +34,10 @@ export const ICONS: Record<string, string> = {
   userplus: '<circle cx="9.5" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6.5-5.5s6.5 2.2 6.5 5.5"/><path d="M18.5 8v5M16 10.5h5"/>',
   doorexit: '<path d="M13 4H7a1.5 1.5 0 0 0-1.5 1.5v13A1.5 1.5 0 0 0 7 20h6"/><path d="M10.5 12h9.5"/><path d="M17 9l3 3-3 3"/>',
   close: '<path d="M6 6l12 12M18 6L6 18"/>',
-  download: '<path d="M12 3.5v11"/><path d="M7.5 10.5l4.5 4.5 4.5-4.5"/><path d="M4.5 18.5h15"/>',
-  upload: '<path d="M12 19.5v-11"/><path d="M7.5 12.5l4.5-4.5 4.5 4.5"/><path d="M4.5 18.5h15"/>',
+  download:
+    '<path d="M5 12v4.3A1.8 1.8 0 0 0 6.8 18.1h10.4A1.8 1.8 0 0 0 19 16.3V12"/><path d="M12 14.5V3.5"/><path d="M8.3 7.2L12 3.5l3.7 3.7"/>',
+  upload:
+    '<path d="M5 12v4.3A1.8 1.8 0 0 0 6.8 18.1h10.4A1.8 1.8 0 0 0 19 16.3V12"/><path d="M12 3.5v11"/><path d="M8.3 11.3L12 15l3.7-3.7"/>',
   copy: '<rect x="8.5" y="8.5" width="12" height="12" rx="2"/><path d="M15.5 8.5V5.8A1.8 1.8 0 0 0 13.7 4H5.8A1.8 1.8 0 0 0 4 5.8v7.9a1.8 1.8 0 0 0 1.8 1.8h2.7"/>',
 }
 
