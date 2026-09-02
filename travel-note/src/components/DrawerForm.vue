@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { CATEGORY_ICON } from '../icons'
 import Icon from './Icon.vue'
 import CalendarPicker from './CalendarPicker.vue'
@@ -35,6 +35,8 @@ const emit = defineEmits<{
 
 const form = ref<Record<string, string>>({})
 const error = ref('')
+// 存放各欄位 textarea 的 DOM 節點，不需要響應式，純粹用來在打開/編輯時觸發一次自動撐高
+const textareaRefs: Record<string, HTMLTextAreaElement | null> = {}
 
 function reset() {
   const values = props.initialValues as Record<string, unknown>
@@ -42,7 +44,29 @@ function reset() {
   error.value = ''
 }
 
-watch(() => props.open, (open) => { if (open) reset() }, { immediate: true })
+// textarea 隨文字量自動撐高，不設上限，捲動交給外層 .drawer-body 處理，
+// 使用者輸入大量文字時就不會被困在一個固定高度的小方塊裡自己滾動
+function autoGrow(target: HTMLTextAreaElement | Event | null) {
+  const el = target instanceof Event ? (target.target as HTMLTextAreaElement) : target
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+
+watch(
+  () => props.open,
+  (open) => {
+    if (!open) return
+    reset()
+    // 表單值寫入後要等 DOM 更新完（textarea 已經有初始內容）才量得到正確的 scrollHeight
+    nextTick(() => {
+      for (const field of props.fields) {
+        if (field.type === 'textarea') autoGrow(textareaRefs[field.key] ?? null)
+      }
+    })
+  },
+  { immediate: true },
+)
 
 // 被 pairedTimeKey 指到的欄位（如 time）已經併進對應日期的 CalendarPicker，不再單獨佔一行
 const pairedTimeKeys = computed(() => new Set(props.fields.map((f) => f.pairedTimeKey).filter((k): k is string => !!k)))
@@ -114,10 +138,12 @@ function submit() {
               <textarea
                 v-else-if="field.type === 'textarea'"
                 :id="`drawer-${field.key}`"
+                :ref="(el) => { textareaRefs[field.key] = el as HTMLTextAreaElement | null }"
                 v-model="form[field.key]"
                 class="f-input"
                 rows="2"
                 :placeholder="placeholderFor(field)"
+                @input="autoGrow"
               ></textarea>
               <CalendarPicker
                 v-else-if="field.type === 'date'"
