@@ -230,15 +230,16 @@ main {
 
 nav {
   position: fixed;
-  /* 從貼齊 0 往上推一點，避免緊貼手機實體邊緣（尤其是有 home indicator 的機型）導致最下排按鈕不好點 */
-  bottom: 14px;
+  /* 貼齊螢幕底部，原本「往上推 14px 避免緊貼手機實體邊緣」改用 padding-bottom 撐開，
+     這樣 nav 的深色背景會一路延伸到底，不會透出 body 的 --paper 底色 */
+  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
   background: var(--ink);
   display: flex;
-  padding: 7px 6px calc(9px + var(--safe-bottom));
+  padding: 7px 6px calc(9px + 14px + var(--safe-bottom));
   box-shadow: 0 8px 24px rgba(22, 34, 58, .28);
   z-index: 10;
 }
