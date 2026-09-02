@@ -210,9 +210,8 @@ function submit() {
 .f-row--split { display: flex; gap: var(--space-2); }
 .f-row--split .f-col { flex: 1; min-width: 0; }
 .f-hint { margin: 5px 2px 0; color: var(--muted); font-size: 11px; }
-.f-textarea-wrap { position: relative; }
-.f-textarea-wrap textarea.f-input { padding-right: 68px; }
-.f-textarea-tools { position: absolute; top: 6px; right: 6px; display: flex; gap: 2px; z-index: 1; }
-.f-tool-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: var(--card); color: var(--icon-muted); }
+.f-textarea-wrap { display: flex; flex-direction: column; }
+.f-textarea-tools { display: flex; justify-content: flex-end; gap: 2px; margin-bottom: 4px; }
+.f-tool-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--icon-muted); }
 .f-tool-btn:active { background: var(--paper); }
 </style>
