@@ -19,8 +19,8 @@ const { formOpen, deleteOpen, editingId, deletingId, busy, actionError, openCrea
 const fields: DrawerField[] = [
   { key: 'category', label: '分類', type: 'select', required: true, options: [...SHARED_CATEGORIES] },
   { key: 'title', label: '名稱', type: 'text', required: true, placeholder: '輸入文件名稱' },
-  { key: 'date_start', label: '開始', type: 'date', width: 'half' },
-  { key: 'date_end', label: '結束', type: 'date', width: 'half' },
+  { key: 'date_start', label: '開始日期', type: 'date', placeholder: '開始日期' },
+  { key: 'date_end', label: '結束日期', type: 'date', placeholder: '結束日期' },
   { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[常用資訊:緊急聯絡]] 這類寫法，備註就會出現能直接點過去的連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0]?.options?.[0] })

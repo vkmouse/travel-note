@@ -8,6 +8,8 @@ const props = defineProps<{
   modelValue: string
   time?: string
   showTime?: boolean
+  // 未選取時顯示的摘要文字，不指定則退回預設的「選擇日期」/「選擇日期與時間」
+  placeholder?: string
 }>()
 
 const emit = defineEmits<{
@@ -114,7 +116,7 @@ function handleTimeInput(e: Event) {
 }
 
 const summaryLabel = computed(() => {
-  if (!props.modelValue) return props.showTime ? '選擇日期與時間' : '選擇日期'
+  if (!props.modelValue) return props.placeholder || (props.showTime ? '選擇日期與時間' : '選擇日期')
   const [y, m, d] = props.modelValue.split('-')
   const base = `${y}/${m}/${d} 週${weekdayLabel(props.modelValue)}`
   return props.showTime ? `${base} ${props.time || '00:00'}` : base

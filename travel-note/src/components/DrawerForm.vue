@@ -96,9 +96,8 @@ function submit() {
         <div class="form-panel">
           <div v-for="row in rows" :key="row.map((f) => f.key).join('-')" class="f-row" :class="{ 'f-row--split': row.length > 1 }">
             <div v-for="field in row" :key="field.key" class="f-col">
-              <!-- 容易混淆的欄位（分類、日期範圍）保留精簡行內小標籤；其餘欄位靠 placeholder 說明即可 -->
+              <!-- 容易混淆的欄位（分類）保留行內小標籤；其餘欄位靠 placeholder 說明即可 -->
               <span v-if="field.type === 'select'" class="f-label" :id="`drawer-${field.key}-label`">{{ field.label }}</span>
-              <span v-else-if="field.type === 'date' && field.width === 'half'" class="f-label f-label--compact">{{ field.label }}</span>
 
               <div v-if="field.type === 'select'" class="f-grid" role="radiogroup" :aria-labelledby="`drawer-${field.key}-label`">
                 <button
@@ -128,21 +127,10 @@ function submit() {
                 :model-value="form[field.key] ?? ''"
                 :show-time="!!field.pairedTimeKey"
                 :time="field.pairedTimeKey ? form[field.pairedTimeKey] : undefined"
+                :placeholder="field.placeholder"
                 @update:model-value="(v) => (form[field.key] = v)"
                 @update:time="(v) => { if (field.pairedTimeKey) form[field.pairedTimeKey] = v }"
               />
-              <!-- 連結類欄位不用文字說明，靠輸入框左側的連結圖示就看得出是網址欄 -->
-              <div v-else-if="field.type === 'url'" class="f-input-wrap">
-                <Icon name="link" :size="16" class="f-input-icon" />
-                <input
-                  :id="`drawer-${field.key}`"
-                  v-model="form[field.key]"
-                  class="f-input-plain"
-                  type="url"
-                  :placeholder="placeholderFor(field)"
-                  :aria-label="field.label"
-                />
-              </div>
               <input
                 v-else
                 :id="`drawer-${field.key}`"
@@ -171,41 +159,8 @@ function submit() {
    這裡只留表單排版細節。label 的上邊距原本用來撐開跟前一欄位的間距，
    現在改由 .f-row + .f-row 統一負責，label 本身只留下與自己欄位的間距。 */
 .f-label { display: block; margin: 0 0 5px; color: var(--muted); font-size: 12px; font-weight: 600; }
-.f-label--compact { font-size: 11px; margin-bottom: 4px; }
 .f-row + .f-row { margin-top: var(--space-3); }
 .f-row--split { display: flex; gap: var(--space-2); }
 .f-row--split .f-col { flex: 1; min-width: 0; }
 .f-hint { margin: 5px 2px 0; color: var(--muted); font-size: 11px; }
-
-/* 連結類欄位：圖示 + 輸入框共用同一個凹槽，不需要另外的文字 label 說明這是網址欄。
-   在 form-panel 底盤裡預設就是白色（--card），跟其他白色輸入列一致。 */
-.f-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 14px;
-  border-radius: var(--r-sm);
-  background: var(--card);
-  box-shadow: var(--shadow-sunken);
-}
-.f-input-icon {
-  color: var(--icon-muted);
-  flex-shrink: 0;
-}
-.f-input-plain {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: none;
-  font: 16px var(--font-body);
-  color: var(--ink);
-  padding: 0;
-  box-shadow: none;
-}
-.f-input-plain:focus {
-  outline: none;
-}
-.f-input-plain::placeholder {
-  color: var(--muted);
-}
 </style>
