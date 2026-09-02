@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import Icon from './Icon.vue'
 import TravelPickerView from '../views/TravelPickerView.vue'
@@ -9,11 +9,17 @@ import MyInvitationsDrawer from './MyInvitationsDrawer.vue'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { useTravels } from '../composables/useTravels'
 import { useMyInvitations } from '../composables/useMyInvitations'
+import { useTravelPrefetch } from '../composables/useTravelPrefetch'
 
 const route = useRoute()
 
 const { currentTravelId } = useCurrentTravel()
 const { travels, refresh: refreshTravels } = useTravels()
+
+// AppShell 切分頁不會重新掛載，只有換旅行時 currentTravelId 才變，
+// 在這裡 prefetch 才能讓四個分頁都提前拿到資料、切換時不再 loading
+const { prefetchAll } = useTravelPrefetch()
+watch(currentTravelId, (id) => { if (id) prefetchAll(id) }, { immediate: true })
 const currentTravel = computed(() => travels.value.find((t) => t.id === currentTravelId.value) ?? null)
 const switcherOpen = ref(false)
 const membersOpen = ref(false)
