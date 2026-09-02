@@ -126,28 +126,9 @@ function submit() {
 </template>
 
 <style scoped>
-.drawer-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(22,34,58,.55); }
-.drawer-sheet { width: 100%; max-width: 480px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; background: var(--card); border-radius: 18px 18px 0 0; }
-.drawer-sheet--sm { max-height: 56vh; }
-.drawer-top { flex-shrink: 0; }
-.drawer-handle { width: 36px; height: 4px; margin: 10px auto 2px; border-radius: 99px; background: var(--line); }
-.drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 18px 6px; }
-.drawer-title { margin: 0 0 4px; font-family: 'Space Grotesk', sans-serif; font-size: 16px; }
+/* 殼層（overlay/sheet/handle/actions/輸入框/分類網格）已搬到 style.css 全域共用，這裡只留表單排版細節 */
 .f-label { display: block; margin: 14px 0 5px; color: var(--muted); font-size: 12px; font-weight: 600; }
 .f-row--split { display: flex; gap: 10px; }
 .f-row--split .f-col { flex: 1; min-width: 0; }
-.f-input { width: 100%; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); font: 14px 'Inter', sans-serif; }
-textarea.f-input { resize: vertical; min-height: 60px; }
-.f-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 8px; }
-.f-grid-opt { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--card); color: var(--icon-muted); font: 12px 'Inter', sans-serif; }
-.f-grid-opt span { color: var(--ink); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-.f-grid-opt--active { background: var(--ink); border-color: var(--ink); color: #fff; }
-.f-grid-opt--active span { color: #fff; }
 .f-hint { margin: 5px 2px 0; color: var(--muted); font-size: 11px; }
-.drawer-error { margin: 10px 0 0; color: var(--danger); font-size: 13px; }
-.drawer-actions { display: flex; gap: 10px; flex-shrink: 0; padding: 12px 18px calc(16px + var(--safe-bottom)); border-top: 1px solid var(--line); }
-.drawer-actions button { min-height: 44px; flex: 1; border: 0; border-radius: 10px; font-weight: 600; }
-.btn-secondary { background: var(--paper); color: var(--ink); }
-.btn-primary { background: var(--brass); color: #fff; }
-button:disabled { opacity: .55; cursor: wait; }
 </style>

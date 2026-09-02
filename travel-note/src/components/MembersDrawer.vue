@@ -187,26 +187,21 @@ async function confirmRemove() {
 </template>
 
 <style scoped>
-.drawer-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(22,34,58,.55); }
-.drawer-sheet { width: 100%; max-width: 480px; max-height: 82vh; overflow: hidden; display: flex; flex-direction: column; background: var(--card); border-radius: 18px 18px 0 0; }
-.drawer-top { flex-shrink: 0; }
-.drawer-handle { width: 36px; height: 4px; margin: 10px auto 2px; border-radius: 99px; background: var(--line); }
-.drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 18px calc(20px + var(--safe-bottom)); }
-.drawer-title { margin: 0 0 14px; font-family: 'Space Grotesk', sans-serif; font-size: 16px; }
-
+/* 殼層、.f-input、drawer-error 已搬到 style.css 全域共用，這裡只留成員列表版面 */
 .invite-row { display: flex; gap: 8px; }
-.f-input { flex: 1; padding: 11px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); color: var(--ink); font: 14px 'Inter', sans-serif; }
-.invite-btn { display: flex; align-items: center; gap: 5px; white-space: nowrap; padding: 0 14px; border: 0; border-radius: 10px; background: var(--brass); color: #fff; font-weight: 600; font-size: 13.5px; }
+.invite-row .f-input { flex: 1; }
+.invite-btn { display: flex; align-items: center; gap: 5px; white-space: nowrap; padding: 0 14px; border: 0; border-radius: var(--r-sm); background: var(--brass); color: #fff; font-weight: 600; font-size: 13.5px; transition: transform .12s ease; }
+.invite-btn:active:not(:disabled) { transform: scale(.97); }
 .invite-btn:disabled { opacity: .55; cursor: wait; }
-.drawer-error { margin: 8px 0 0; color: var(--danger); font-size: 13px; }
 .members-hint { margin: 10px 0 16px; color: var(--muted); font-size: 12px; line-height: 1.5; }
 
-.member-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
-.member-row:first-of-type { border-top: 0; }
+/* 用極淺的內縮陰影取代 border-top 分隔列與列，視覺上更軟 */
+.member-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; box-shadow: inset 0 -1px 0 var(--line); }
+.member-row:last-child { box-shadow: none; }
 .member-icon { width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px; background: var(--paper); color: var(--brass); display: flex; align-items: center; justify-content: center; }
-.member-icon.pending { color: var(--muted); border: 1px dashed var(--line); background: none; }
+.member-icon.pending { color: var(--muted); background: none; box-shadow: var(--shadow-sunken); }
 .member-body { flex: 1; min-width: 0; }
 .member-email { margin: 0; font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .member-status { margin: 2px 0 0; font-size: 11px; color: var(--brass); }
-.member-tag { flex-shrink: 0; font-size: 11px; font-weight: 600; color: var(--brass); background: var(--paper); padding: 3px 9px; border-radius: 999px; }
+.member-tag { flex-shrink: 0; font-size: 11px; font-weight: 600; color: var(--brass); background: var(--paper); padding: 3px 9px; border-radius: var(--r-pill); }
 </style>

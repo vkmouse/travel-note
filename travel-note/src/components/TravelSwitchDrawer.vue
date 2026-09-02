@@ -23,11 +23,4 @@ function handlePicked() {
   </div>
 </template>
 
-<style scoped>
-.drawer-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(22,34,58,.55); }
-.drawer-sheet { width: 100%; max-width: 480px; max-height: 82vh; overflow: hidden; display: flex; flex-direction: column; background: var(--card); border-radius: 18px 18px 0 0; }
-.drawer-top { flex-shrink: 0; }
-.drawer-handle { width: 36px; height: 4px; margin: 10px auto 2px; border-radius: 99px; background: var(--line); }
-.drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 18px calc(20px + var(--safe-bottom)); }
-.drawer-title { margin: 0 0 14px; font-family: 'Space Grotesk', sans-serif; font-size: 16px; }
-</style>
+<!-- 殼層已搬到 style.css 全域共用，這個元件不再需要 scoped style -->

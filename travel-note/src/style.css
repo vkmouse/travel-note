@@ -12,8 +12,31 @@
   --danger: #b3392c;
   --r-sm: 8px;
   --r-md: 12px;
+  --r-lg: 18px;
+  --r-pill: 999px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+
+  /* 陰影取代邊框做為分區手段：sunken 表現輸入凹槽，raised 表現可點按元件，
+     sheet/elevated 用於面板本身與疊在其他面板之上時的層次感 */
+  --shadow-sunken: inset 0 1px 3px rgba(22, 34, 58, .12);
+  --shadow-raised: 0 1px 2px rgba(22, 34, 58, .08), 0 1px 1px rgba(22, 34, 58, .04);
+  --shadow-sheet: 0 -12px 30px rgba(22, 34, 58, .18);
+  --shadow-elevated: 0 -14px 36px rgba(22, 34, 58, .28);
+
+  /* Bottom sheet 固定兩段高度，同層級面板頂邊對齊，不隨內容多寡浮動 */
+  --sheet-h-compact: min(50vh, 420px);
+  --sheet-h-full: min(86vh, 720px);
+
+  --font-heading: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 }
 
 * {
@@ -30,7 +53,7 @@ body {
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   color: var(--ink);
   display: flex;
   justify-content: center;
@@ -62,8 +85,189 @@ svg {
   justify-content: center;
 }
 
+/* 共用 Bottom Sheet 殼層：8 個 drawer 元件（表單、確認、匯出入、成員、邀請、切換旅行）
+   共用同一份 backdrop/面板/按鈕/輸入框樣式，個別差異在各元件 scoped style 補充 */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(22, 34, 58, .35);
+}
+
+/* 疊在其他 drawer 之上的輕量確認框（例如成員列表裡的移除確認） */
+.drawer-overlay--elevated {
+  z-index: 52;
+}
+
+.drawer-sheet {
+  width: 100%;
+  max-width: 480px;
+  height: var(--sheet-h-full);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  box-shadow: var(--shadow-sheet);
+}
+.drawer-overlay--elevated .drawer-sheet {
+  box-shadow: var(--shadow-elevated);
+}
+.drawer-sheet--sm {
+  height: var(--sheet-h-compact);
+}
+
+.drawer-top {
+  flex: 0 0 auto;
+}
+.drawer-handle {
+  width: 36px;
+  height: 4px;
+  margin: 10px auto 2px;
+  border-radius: var(--r-pill);
+  background: var(--line);
+}
+.drawer-title {
+  margin: 0 0 var(--space-3);
+  font-family: var(--font-heading);
+  font-size: 16px;
+}
+.drawer-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-3) 18px calc(var(--space-4) + var(--safe-bottom));
+}
+/* 固定在底部、不隨內容捲動的取消／儲存區，用陰影分隔取代 border-top */
+.drawer-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  padding: var(--space-3) 18px calc(var(--space-3) + var(--safe-bottom));
+  box-shadow: inset 0 1px 0 var(--line);
+}
+.drawer-actions button {
+  min-height: 44px;
+  flex: 1;
+  border: 0;
+  border-radius: var(--r-md);
+  font-weight: 600;
+  transition: transform .12s ease, filter .15s ease;
+}
+.drawer-actions button:active:not(:disabled) {
+  transform: scale(.97);
+}
+.btn-secondary {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: var(--shadow-raised);
+}
+.btn-primary {
+  background: var(--brass);
+  color: #fff;
+}
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+button:disabled {
+  opacity: .55;
+  cursor: wait;
+}
+
+.drawer-error {
+  margin: 10px 0 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.drawer-confirm {
+  text-align: center;
+  padding-top: 8px;
+}
+.drawer-confirm-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  border-radius: 50%;
+  background: rgba(179, 57, 44, .1);
+  color: var(--danger);
+}
+.drawer-confirm h3 {
+  margin: 0 0 6px;
+  font: 700 16px var(--font-heading);
+}
+.drawer-confirm p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+
+/* 表單輸入框：拿掉描邊，用內凹陰影表現凹槽，跟旁邊沒有邊框的靜態文字自然融合 */
+.f-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px var(--font-body);
+  box-shadow: var(--shadow-sunken);
+}
+.f-input:focus {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+textarea.f-input {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* 分類選擇網格：active 用實色填滿，不再靠描邊區分選取狀態 */
+.f-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(68px, 1fr));
+  gap: var(--space-2);
+}
+.f-grid-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 4px 10px;
+  border: none;
+  border-radius: var(--r-md);
+  background: var(--paper);
+  color: var(--icon-muted);
+  font: 12px var(--font-body);
+  box-shadow: var(--shadow-raised);
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.f-grid-opt span {
+  color: var(--ink);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.f-grid-opt--active {
+  background: var(--ink);
+  color: #fff;
+  box-shadow: none;
+}
+.f-grid-opt--active span {
+  color: #fff;
+}
+
 .section-label {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: var(--font-heading);
   font-size: 12px;
   font-weight: 600;
   color: var(--brass);
@@ -124,7 +328,7 @@ svg {
 }
 .filter-chip {
   flex-shrink: 0;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono);
   font-size: 11.5px;
   font-weight: 600;
   border: 1px solid var(--line);

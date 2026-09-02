@@ -79,21 +79,17 @@ async function decline(id: string) {
 </template>
 
 <style scoped>
-.drawer-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(22,34,58,.55); }
-.drawer-sheet { width: 100%; max-width: 480px; max-height: 82vh; overflow: hidden; display: flex; flex-direction: column; background: var(--card); border-radius: 18px 18px 0 0; }
-.drawer-top { flex-shrink: 0; }
-.drawer-handle { width: 36px; height: 4px; margin: 10px auto 2px; border-radius: 99px; background: var(--line); }
-.drawer-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 18px calc(20px + var(--safe-bottom)); }
-.drawer-title { margin: 0 0 14px; font-family: 'Space Grotesk', sans-serif; font-size: 16px; }
-
-.invite-item { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
-.invite-item:first-of-type { border-top: 0; }
+/* 殼層已搬到 style.css 全域共用，這裡只留邀請列表版面 */
+/* 用極淺的內縮陰影取代 border-top 分隔列與列，視覺上更軟 */
+.invite-item { display: flex; align-items: center; gap: 10px; padding: 12px 0; box-shadow: inset 0 -1px 0 var(--line); }
+.invite-item:last-child { box-shadow: none; }
 .invite-icon { width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px; background: var(--paper); color: var(--brass); display: flex; align-items: center; justify-content: center; }
 .invite-body { flex: 1; min-width: 0; }
 .invite-title { margin: 0; font-weight: 600; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .invite-sub { margin: 2px 0 0; font-size: 11.5px; color: var(--muted); }
 .invite-actions { display: flex; gap: 6px; flex-shrink: 0; }
-.invite-actions button { min-height: 36px; border: 0; border-radius: 9px; font-weight: 600; font-size: 12.5px; padding: 0 11px; display: flex; align-items: center; gap: 4px; }
+.invite-actions button { min-height: 36px; border: 0; border-radius: var(--r-sm); font-weight: 600; font-size: 12.5px; padding: 0 11px; display: flex; align-items: center; gap: 4px; transition: transform .12s ease; }
+.invite-actions button:active:not(:disabled) { transform: scale(.97); }
 .btn-decline { background: var(--paper); color: var(--ink); }
 .btn-accept { background: var(--brass); color: #fff; }
 .invite-actions button:disabled { opacity: .55; cursor: wait; }

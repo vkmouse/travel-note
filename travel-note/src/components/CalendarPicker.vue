@@ -2,6 +2,7 @@
 // 有沒有時間只差最下面一段 time-row，月曆格子本身的邏輯共用一份，所以合成同一個元件用 showTime 切換
 import { computed, ref, watch } from 'vue'
 import { WEEKDAY_LABELS, weekdayLabel, todayDateKey, nowTimeValue, daysInMonth, firstWeekdayOfMonth, buildDateKey } from '../utils/date'
+import ExpandableField from './ExpandableField.vue'
 
 const props = defineProps<{
   modelValue: string
@@ -121,13 +122,10 @@ const summaryLabel = computed(() => {
 </script>
 
 <template>
-  <div class="cal-field" :class="{ expanded }">
-    <button type="button" class="cal-summary" :aria-expanded="expanded" @click="expanded = !expanded">
-      <span>{{ summaryLabel }}</span>
-      <svg class="cal-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-    </button>
+  <ExpandableField :expanded="expanded" @update:expanded="expanded = $event">
+    <template #summary>{{ summaryLabel }}</template>
 
-    <div v-if="expanded" class="cal-body">
+    <div class="cal-body">
       <div class="cal-nav">
         <button type="button" class="cal-arrow" aria-label="上個月" @click="prevMonth">
           <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18" /></svg>
@@ -161,43 +159,10 @@ const summaryLabel = computed(() => {
         <input type="time" class="cal-time-input" :value="time || '00:00'" @input="handleTimeInput" />
       </div>
     </div>
-  </div>
+  </ExpandableField>
 </template>
 
 <style scoped>
-.cal-field {
-  border: 1px solid var(--line);
-  border-radius: var(--r-sm);
-  background: var(--paper);
-  overflow: hidden;
-}
-.cal-summary {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 11px 12px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font: 14px 'Inter', sans-serif;
-  color: var(--ink);
-  text-align: left;
-}
-.cal-chevron {
-  flex-shrink: 0;
-  color: var(--icon-muted);
-  transition: transform 0.2s ease;
-}
-.cal-field.expanded .cal-chevron {
-  transform: rotate(180deg);
-}
-.cal-body {
-  padding: 10px 12px 12px;
-  border-top: 1px solid var(--line);
-  background: var(--card);
-}
 .cal-nav {
   display: flex;
   align-items: center;
@@ -209,6 +174,7 @@ const summaryLabel = computed(() => {
   text-align: center;
   font-weight: 600;
   font-size: 13px;
+  font-family: var(--font-mono);
 }
 .cal-arrow {
   background: none;
@@ -227,12 +193,13 @@ const summaryLabel = computed(() => {
 }
 .cal-today-btn {
   background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 99px;
+  border: none;
+  border-radius: var(--r-pill);
   padding: 5px 10px;
   font-size: 11px;
   font-weight: 600;
   color: var(--ink);
+  box-shadow: var(--shadow-raised);
   cursor: pointer;
 }
 .cal-weekdays {
@@ -263,14 +230,16 @@ const summaryLabel = computed(() => {
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
+  font-family: var(--font-mono);
   color: var(--ink);
 }
 .cal-day.other-month {
   color: var(--muted);
   opacity: 0.5;
 }
+/* 用內縮陰影畫出一圈提示，取代描邊，跟 selected 的實色填滿共用「無邊框」語言 */
 .cal-day.today {
-  border: 1px solid var(--brass);
+  box-shadow: inset 0 0 0 1.5px var(--brass);
   font-weight: 700;
 }
 .cal-day.selected {
@@ -293,10 +262,11 @@ const summaryLabel = computed(() => {
 .cal-time-input {
   width: 110px;
   padding: 8px 10px;
-  border: 1px solid var(--line);
+  border: none;
   border-radius: var(--r-sm);
   background: var(--paper);
   color: var(--ink);
-  font: 13px 'Inter', sans-serif;
+  font: 13px var(--font-mono);
+  box-shadow: var(--shadow-sunken);
 }
 </style>
