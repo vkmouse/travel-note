@@ -156,7 +156,10 @@ const summaryLabel = computed(() => {
         </button>
       </div>
 
-      <input v-if="showTime" type="time" class="cal-time-input" :value="time || '00:00'" @input="handleTimeInput" />
+      <div v-if="showTime" class="cal-time-row">
+        <span class="cal-time-label">時間</span>
+        <input type="time" class="cal-time-input" :value="time || '00:00'" @input="handleTimeInput" />
+      </div>
     </div>
   </div>
 </template>
@@ -275,10 +278,21 @@ const summaryLabel = computed(() => {
   color: #fff;
   font-weight: 700;
 }
-.cal-time-input {
-  width: 100%;
+.cal-time-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   margin-top: 10px;
-  padding: 9px 10px;
+}
+.cal-time-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.cal-time-input {
+  width: 110px;
+  padding: 8px 10px;
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   background: var(--paper);
