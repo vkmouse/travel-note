@@ -7,7 +7,7 @@ import { useCrudDrawer } from '../composables/useCrudDrawer'
 import { CATEGORY_ICON } from '../icons'
 import { SHARED_CATEGORIES } from '../constants/categories'
 import Icon from '../components/Icon.vue'
-import QuickLinkText from '../components/QuickLinkText.vue'
+import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createDocument, deleteDocument, updateDocument } from '../services/api'
@@ -21,7 +21,7 @@ const fields: DrawerField[] = [
   { key: 'title', label: '名稱', type: 'text', required: true, placeholder: '輸入文件名稱' },
   { key: 'date_start', label: '開始日期', type: 'date', placeholder: '開始日期' },
   { key: 'date_end', label: '結束日期', type: 'date', placeholder: '結束日期' },
-  { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[常用資訊:緊急聯絡]] 這類寫法，備註就會出現能直接點過去的連結' },
+  { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '支援 markdown：**粗體**、*斜體*、`代碼`、- 清單、[文字](網址)。連結目標打成 [緊急聯絡](常用資訊/緊急聯絡) 這種路徑，就會變成能直接點過去的內部連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0]?.options?.[0] })
 
@@ -71,7 +71,7 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
               <div class="card-actions"><button class="icon-btn" aria-label="編輯" @click="openEdit(doc.id)"><Icon name="edit" :size="17" /></button><button class="icon-btn danger" aria-label="刪除" @click="openDelete(doc.id)"><Icon name="trash" :size="17" /></button></div>
             </div>
             <div v-if="dateRange(doc)" class="ticket-dates">{{ dateRange(doc) }}</div>
-            <div v-if="doc.note" class="ticket-note"><QuickLinkText :text="doc.note" /></div>
+            <div v-if="doc.note" class="ticket-note"><NoteText :text="doc.note" /></div>
             <a v-if="doc.link" class="ticket-link" :href="doc.link" target="_blank" rel="noopener">
               <Icon name="link" :size="13" />
               開啟連結

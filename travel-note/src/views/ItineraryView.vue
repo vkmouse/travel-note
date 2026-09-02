@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useItinerary } from '../composables/useItinerary'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import Icon from '../components/Icon.vue'
-import QuickLinkText from '../components/QuickLinkText.vue'
+import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createItinerary, deleteItinerary, updateItinerary } from '../services/api'
@@ -22,7 +22,7 @@ const actionError = ref('')
 const fields: DrawerField[] = [
   { key: 'date', label: '日期時間', type: 'date', required: true, pairedTimeKey: 'time' }, { key: 'time', label: '時間', type: 'time' },
   { key: 'title', label: '行程名稱', type: 'text', required: true, placeholder: '輸入行程名稱' }, { key: 'location', label: '地點', type: 'text' },
-  { key: 'map_url', label: '地圖連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[旅行文件:住宿]] 這類寫法，備註就會出現能直接點過去的連結' },
+  { key: 'map_url', label: '地圖連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '支援 markdown：**粗體**、*斜體*、`代碼`、- 清單、[文字](網址)。連結目標打成 [住宿資訊](旅行文件/住宿) 這種路徑，就會變成能直接點過去的內部連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { date: '' })
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
@@ -108,7 +108,7 @@ function dayNum(d: string) {
                 <Icon name="pin" :size="13" />
                 {{ it.location }}
               </p>
-              <p v-if="it.note" class="tl-note"><QuickLinkText :text="it.note" /></p>
+              <div v-if="it.note" class="tl-note"><NoteText :text="it.note" /></div>
               <a v-if="it.map_url" class="map-link" :href="it.map_url" target="_blank" rel="noopener">
                 <Icon name="compass" :size="13" />
                 查看地圖

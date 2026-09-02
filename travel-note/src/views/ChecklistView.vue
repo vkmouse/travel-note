@@ -7,7 +7,7 @@ import { useCrudDrawer } from '../composables/useCrudDrawer'
 import { CATEGORY_ICON } from '../icons'
 import { SHARED_CATEGORIES } from '../constants/categories'
 import Icon from '../components/Icon.vue'
-import QuickLinkText from '../components/QuickLinkText.vue'
+import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createChecklist, deleteChecklist, patchChecklistChecked, updateChecklist } from '../services/api'
@@ -18,7 +18,7 @@ const { formOpen, deleteOpen, editingId, deletingId, busy, actionError, openCrea
   useCrudDrawer(currentTravelId, { create: createChecklist, update: updateChecklist, remove: deleteChecklist }, refresh)
 const fields: DrawerField[] = [
   { key: 'category', label: '分類', type: 'select', required: true, options: [...SHARED_CATEGORIES] },
-  { key: 'title', label: '項目', type: 'text', required: true, placeholder: '輸入項目名稱' }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[旅行文件:機票]] 這類寫法，備註就會出現能直接點過去的連結' },
+  { key: 'title', label: '項目', type: 'text', required: true, placeholder: '輸入項目名稱' }, { key: 'note', label: '備註', type: 'textarea', hint: '支援 markdown：**粗體**、*斜體*、`代碼`、- 清單、[文字](網址)。連結目標打成 [機票資訊](旅行文件/機票) 這種路徑，就會變成能直接點過去的內部連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0]?.options?.[0] })
 async function toggle(item: (typeof items.value)[number]) { if (!currentTravelId.value) return; busy.value = true; try { await patchChecklistChecked(currentTravelId.value, item.id, !item.is_checked); await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
@@ -72,7 +72,7 @@ const progressPct = computed(() => (total.value ? (done.value / total.value) * 1
             </button>
             <div class="info-body">
               <p class="info-title" :class="{ done: item.is_checked }">{{ item.title }}</p>
-              <p v-if="item.note" class="info-note"><QuickLinkText :text="item.note" /></p>
+              <div v-if="item.note" class="info-note"><NoteText :text="item.note" /></div>
             </div>
             <div class="card-actions"><button class="icon-btn" aria-label="編輯" @click="openEdit(item.id)"><Icon name="edit" :size="17" /></button><button class="icon-btn danger" aria-label="刪除" @click="openDelete(item.id)"><Icon name="trash" :size="17" /></button></div>
           </div>

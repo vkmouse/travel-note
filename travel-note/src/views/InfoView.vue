@@ -7,7 +7,7 @@ import { useCrudDrawer } from '../composables/useCrudDrawer'
 import { CATEGORY_ICON } from '../icons'
 import { SHARED_CATEGORIES } from '../constants/categories'
 import Icon from '../components/Icon.vue'
-import QuickLinkText from '../components/QuickLinkText.vue'
+import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createInfo, deleteInfo, patchInfoChecked, updateInfo } from '../services/api'
@@ -18,7 +18,7 @@ const { formOpen, deleteOpen, editingId, deletingId, busy, actionError, openCrea
   useCrudDrawer(currentTravelId, { create: createInfo, update: updateInfo, remove: deleteInfo }, refresh)
 const fields: DrawerField[] = [
   { key: 'category', label: '分類', type: 'select', required: true, options: [...SHARED_CATEGORIES] },
-  { key: 'title', label: '標題', type: 'text', required: true, placeholder: '輸入標題' }, { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '可加入 [[行前清單:藥品]] 這類寫法，備註就會出現能直接點過去的連結' },
+  { key: 'title', label: '標題', type: 'text', required: true, placeholder: '輸入標題' }, { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '支援 markdown：**粗體**、*斜體*、`代碼`、- 清單、[文字](網址)。連結目標打成 [藥品清單](行前清單/藥品) 這種路徑，就會變成能直接點過去的內部連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0]?.options?.[0] })
 async function toggle(item: (typeof items.value)[number]) { if (!currentTravelId.value) return; busy.value = true; try { await patchInfoChecked(currentTravelId.value, item.id, !item.is_checked); await refresh() } catch (e) { actionError.value = e instanceof Error ? e.message : String(e) } finally { busy.value = false } }
@@ -58,7 +58,7 @@ const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sort
             </button>
             <div class="info-body">
               <p class="info-title" :class="{ done: item.is_checked }">{{ item.title }}</p>
-              <p v-if="item.note" class="info-note"><QuickLinkText :text="item.note" /></p>
+              <div v-if="item.note" class="info-note"><NoteText :text="item.note" /></div>
               <a v-if="item.link" class="info-link" :href="item.link" target="_blank" rel="noopener">
                 <Icon name="link" :size="13" />
                 開啟連結

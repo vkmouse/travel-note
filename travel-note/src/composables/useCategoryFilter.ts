@@ -1,7 +1,7 @@
 import { computed, ref, watch, type Ref } from 'vue'
 import { useRoute } from 'vue-router'
 
-// 分類點過來的網址帶 query.category，要能覆蓋目前選取的分類（見 QuickLinkText 的用途）
+// 分類點過來的網址帶 query.category，要能覆蓋目前選取的分類
 export function useCategoryFilter<T>(items: Ref<T[]>, categoryOf: (item: T) => string) {
   const route = useRoute()
   const queryCategory = computed(() => (typeof route.query.category === 'string' ? route.query.category : ''))
