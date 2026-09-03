@@ -66,20 +66,43 @@ const dayItems = computed(() =>
     : [],
 )
 
-// 當天 >= 2 個有 map_url 的行程就試著串成一條路線：每個 map_url 先轉成地點名稱，
-// 解析不出來的跳過，最後湊到 >= 2 個地點才產生連結。切天的話用 day 比對捨棄過期結果。
+// 規劃路線是使用者手動勾選要串進去的項目，不是自動抓當天全部：
+// 進入模式時預設全選（等於維持原本「整天路線」的行為），使用者可以再自己取消勾選。
+const routableItems = computed(() => dayItems.value.filter((it) => it.map_url))
+const planningRoute = ref(false)
+const selectedRouteIds = ref<Set<string>>(new Set())
+
+function startPlanning() {
+  selectedRouteIds.value = new Set(routableItems.value.map((it) => it.id))
+  planningRoute.value = true
+}
+function selectAllRoute() {
+  selectedRouteIds.value = new Set(routableItems.value.map((it) => it.id))
+}
+function toggleRouteItem(id: string) {
+  const next = new Set(selectedRouteIds.value)
+  if (next.has(id)) next.delete(id)
+  else next.add(id)
+  selectedRouteIds.value = next
+}
+function closePlanning() {
+  planningRoute.value = false
+  selectedRouteIds.value = new Set()
+}
+watch(activeDay, closePlanning)
+
+// 被選取項目湊到 >= 2 個才試著解析成地點串路線；用 day 比對捨棄切天後才回來的過期結果。
 const routeUrl = ref<string | null>(null)
 watch(
-  dayItems,
-  async (list) => {
+  selectedRouteIds,
+  async (ids) => {
     const day = activeDay.value
-    const mapUrls = list.map((it) => it.map_url).filter((u): u is string => !!u)
-    if (mapUrls.length < 2) { routeUrl.value = null; return }
+    if (ids.size < 2) { routeUrl.value = null; return }
+    const mapUrls = dayItems.value.filter((it) => ids.has(it.id) && it.map_url).map((it) => it.map_url!)
     const places = (await Promise.all(mapUrls.map(resolvePlaceFromMapUrl))).filter((p): p is string => !!p)
     if (activeDay.value !== day) return
     routeUrl.value = places.length >= 2 ? buildDirectionsUrl(places) : null
   },
-  { immediate: true },
 )
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
@@ -109,10 +132,26 @@ function dayNum(d: string) {
         </div>
       </div>
 
-      <a v-if="routeUrl" class="route-link" :href="routeUrl" target="_blank" rel="noopener">
-        <Icon name="compass" :size="14" />
-        規劃整天路線
-      </a>
+      <div v-if="routableItems.length >= 2" class="route-toolbar-row">
+        <button v-if="!planningRoute" class="route-toggle-btn" type="button" @click="startPlanning">
+          <Icon name="compass" :size="14" />
+          規劃路線
+        </button>
+        <template v-else>
+          <button class="route-tool-btn" type="button" @click="selectAllRoute">
+            <Icon name="selectall" :size="14" />
+            全選
+          </button>
+          <a v-if="routeUrl" class="route-link" :href="routeUrl" target="_blank" rel="noopener" @click="closePlanning">
+            <Icon name="compass" :size="14" />
+            開啟路線（{{ selectedRouteIds.size }}）
+          </a>
+          <span v-else class="route-link route-link--disabled">選 2 個以上地點</span>
+          <button class="route-tool-btn" type="button" aria-label="取消規劃" @click="closePlanning">
+            <Icon name="close" :size="14" />
+          </button>
+        </template>
+      </div>
 
       <div v-if="dayItems.length" class="timeline">
         <div v-for="(it, idx) in dayItems" :key="it.id" class="tl-item">
@@ -131,10 +170,14 @@ function dayNum(d: string) {
                 {{ it.location }}
               </p>
               <div v-if="it.note" class="tl-note"><NoteText :text="it.note" /></div>
-              <a v-if="it.map_url" class="map-link" :href="it.map_url" target="_blank" rel="noopener">
+              <a v-if="it.map_url && !planningRoute" class="map-link" :href="it.map_url" target="_blank" rel="noopener">
                 <Icon name="compass" :size="13" />
                 查看地圖
               </a>
+              <label v-else-if="it.map_url && planningRoute" class="map-route-check">
+                <input type="checkbox" :checked="selectedRouteIds.has(it.id)" @change="toggleRouteItem(it.id)" />
+                帶入路線
+              </label>
             </div>
           </div>
         </div>
@@ -285,11 +328,50 @@ function dayNum(d: string) {
   color: var(--slate);
   text-decoration: none;
 }
+.map-route-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+  padding: 6px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brass);
+  cursor: pointer;
+}
+.map-route-check input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--brass);
+}
+.route-toolbar-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.route-toggle-btn,
+.route-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: var(--r-sm);
+  background: var(--card);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brass);
+}
+.route-tool-btn {
+  padding: 8px 10px;
+  color: var(--slate);
+}
 .route-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 14px;
   padding: 8px 14px;
   border-radius: var(--r-sm);
   background: var(--card);
@@ -298,5 +380,9 @@ function dayNum(d: string) {
   font-weight: 600;
   color: var(--brass);
   text-decoration: none;
+}
+.route-link--disabled {
+  color: var(--muted);
+  border-style: dashed;
 }
 </style>
