@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { CATEGORY_ICON } from '../icons'
 import Icon from './Icon.vue'
 import CalendarPicker from './CalendarPicker.vue'
 import { resolveMapRedirect } from '../services/api'
-import { GOOGLE_MAPS_SHORT_LINK_PREFIX, parseMapsPlaceName } from '../utils/googleMaps'
+import { GOOGLE_MAPS_SHORT_LINK_PREFIX, parseMapsPlaceName, resolvePlaceFromMapUrl } from '../utils/googleMaps'
 
 export interface DrawerField {
   key: string
@@ -44,10 +44,52 @@ const error = ref('')
 const textareaRefs: Record<string, HTMLTextAreaElement | null> = {}
 const copiedKey = ref('')
 
+// map_url 地點名稱預覽：跟下面「貼上短網址自動填 location」是分開的獨立功能，
+// 純顯示用，不會寫回任何欄位。用遞增的 requestId 擋掉「查詢途中又改了網址」的過期回應。
+type MapPreviewState = { status: 'idle' | 'loading' | 'done' | 'error'; name: string | null }
+const mapPreview = reactive<Record<string, MapPreviewState>>({})
+const previewRequestId: Record<string, number> = {}
+const previewDebounce: Record<string, ReturnType<typeof setTimeout>> = {}
+
+function schedulePreview(key: string, url: string) {
+  const trimmed = url.trim()
+  if (!trimmed) {
+    previewRequestId[key] = (previewRequestId[key] ?? 0) + 1
+    mapPreview[key] = { status: 'idle', name: null }
+    return
+  }
+  const requestId = (previewRequestId[key] ?? 0) + 1
+  previewRequestId[key] = requestId
+  mapPreview[key] = { status: 'loading', name: null }
+  resolvePlaceFromMapUrl(trimmed)
+    .then((name) => {
+      if (previewRequestId[key] !== requestId) return
+      mapPreview[key] = name ? { status: 'done', name } : { status: 'error', name: null }
+    })
+    .catch(() => {
+      if (previewRequestId[key] !== requestId) return
+      mapPreview[key] = { status: 'error', name: null }
+    })
+}
+
+// 輸入/貼上都會觸發（不只貼上），打字過程 debounce 一下再查，避免每個字元都打一次 API
+function handleUrlPreviewInput(key: string, event: Event) {
+  const value = (event.target as HTMLInputElement).value
+  if (previewDebounce[key]) clearTimeout(previewDebounce[key])
+  previewDebounce[key] = setTimeout(() => schedulePreview(key, value), 400)
+}
+
 function reset() {
   const values = props.initialValues as Record<string, unknown>
   form.value = Object.fromEntries(props.fields.map((field) => [field.key, String(values[field.key] ?? '')]))
   error.value = ''
+  // 編輯已有資料時，一打開就先把既有的 map_url 查一次地點名稱給預覽
+  for (const key of Object.keys(mapPreview)) delete mapPreview[key]
+  for (const field of props.fields) {
+    if (field.type === 'url' && form.value[field.key]?.trim()) {
+      schedulePreview(field.key, form.value[field.key]!)
+    }
+  }
 }
 
 // textarea 隨文字量自動撐高，不設上限，捲動交給外層 .drawer-body 處理，
@@ -206,7 +248,18 @@ function submit() {
                 :placeholder="placeholderFor(field)"
                 :aria-label="field.label"
                 @paste="handleMapUrlPaste(field, $event)"
+                @input="field.type === 'url' && handleUrlPreviewInput(field.key, $event)"
               />
+              <p
+                v-if="field.type === 'url' && mapPreview[field.key] && mapPreview[field.key]!.status !== 'idle'"
+                class="f-map-preview"
+                :class="`f-map-preview--${mapPreview[field.key]!.status}`"
+              >
+                <Icon v-if="mapPreview[field.key]!.status === 'done'" name="pin" :size="12" />
+                <span v-if="mapPreview[field.key]!.status === 'loading'">查詢地點中…</span>
+                <span v-else-if="mapPreview[field.key]!.status === 'done'">{{ mapPreview[field.key]!.name }}</span>
+                <span v-else-if="mapPreview[field.key]!.status === 'error'">看不出地點名稱，確認一下連結是否正確</span>
+              </p>
               <p v-if="field.hint" class="f-hint">{{ field.hint }}</p>
             </div>
           </div>
@@ -229,6 +282,22 @@ function submit() {
 .f-row--split { display: flex; gap: var(--space-2); }
 .f-row--split .f-col { flex: 1; min-width: 0; }
 .f-hint { margin: 5px 2px 0; color: var(--muted); font-size: 11px; }
+.f-map-preview {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 2px 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+.f-map-preview--loading,
+.f-map-preview--error {
+  color: var(--muted);
+}
+.f-map-preview--done {
+  color: var(--brass);
+  font-weight: 600;
+}
 .f-textarea-wrap { display: flex; flex-direction: column; }
 .f-textarea-tools { display: flex; justify-content: flex-end; gap: 2px; margin-bottom: 4px; }
 .f-tool-btn { display: flex; align-items: center; justify-content: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--icon-muted); }
