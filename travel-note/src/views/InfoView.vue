@@ -4,16 +4,20 @@ import { useInfo } from '../composables/useInfo'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { useCategoryFilter } from '../composables/useCategoryFilter'
 import { useCrudDrawer } from '../composables/useCrudDrawer'
+import { useRoutePlanning } from '../composables/useRoutePlanning'
 import { CATEGORY_ICON } from '../icons'
 import { SHARED_CATEGORIES } from '../constants/categories'
 import Icon from '../components/Icon.vue'
 import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
+import RoutePlanningBar from '../components/RoutePlanningBar.vue'
 import { createInfo, deleteInfo, patchInfoChecked, updateInfo } from '../services/api'
 
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useInfo(currentTravelId)
+const { planningRoute, selectedCount, isSelected, selectionNumber, toggle: toggleRoute } = useRoutePlanning(currentTravelId)
+function routeId(id: string) { return `info:${id}` }
 const { formOpen, deleteOpen, editingId, deletingId, busy, actionError, openCreate, openEdit, openDelete, save, confirmDelete } =
   useCrudDrawer(currentTravelId, { create: createInfo, update: updateInfo, remove: deleteInfo }, refresh)
 const fields: DrawerField[] = [
@@ -44,27 +48,44 @@ const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sort
         </div>
       </div>
 
+      <p v-if="planningRoute" class="route-hint">點選卡片加入路線・已選 {{ selectedCount }} 個地點</p>
+
       <template v-if="filtered.length">
         <template v-for="group in grouped" :key="group.category">
           <div class="section-label">
             <Icon :name="CATEGORY_ICON[group.category] || 'tag'" :size="14" />
             {{ group.category }}
           </div>
-          <div v-for="item in group.rows" :key="item.id" class="info-row">
-            <button class="check-dot-btn" aria-label="切換完成狀態" @click="toggle(item)">
+          <div
+            v-for="item in group.rows"
+            :key="item.id"
+            class="info-row"
+            :class="{
+              'info-row--select-mode': planningRoute && item.map_url,
+              'info-row--selected': planningRoute && item.map_url && isSelected(routeId(item.id)),
+            }"
+            @click="planningRoute && item.map_url && toggleRoute(routeId(item.id))"
+          >
+            <button v-if="!(planningRoute && item.map_url)" class="check-dot-btn" aria-label="切換完成狀態" @click.stop="toggle(item)">
               <div class="check-dot" :class="{ checked: item.is_checked }">
                 <Icon v-if="item.is_checked" name="check" :size="15" :stroke-width="2.6" />
               </div>
             </button>
+            <div v-else class="route-select-badge" :class="{ 'route-select-badge--on': isSelected(routeId(item.id)) }">
+              {{ selectionNumber(routeId(item.id)) }}
+            </div>
             <div class="info-body">
               <p class="info-title" :class="{ done: item.is_checked }">{{ item.title }}</p>
               <div v-if="item.note" class="info-note"><NoteText :text="item.note" /></div>
-              <a v-if="item.map_url" class="info-link" :href="item.map_url" target="_blank" rel="noopener">
+              <a v-if="item.map_url && !planningRoute" class="info-link" :href="item.map_url" target="_blank" rel="noopener">
                 <Icon name="link" :size="13" />
                 開啟連結
               </a>
             </div>
-            <div class="card-actions"><button class="icon-btn" aria-label="編輯" @click="openEdit(item.id)"><Icon name="edit" :size="17" /></button><button class="icon-btn danger" aria-label="刪除" @click="openDelete(item.id)"><Icon name="trash" :size="17" /></button></div>
+            <div v-if="!(planningRoute && item.map_url)" class="card-actions">
+              <button class="icon-btn" aria-label="編輯" @click.stop="openEdit(item.id)"><Icon name="edit" :size="17" /></button>
+              <button class="icon-btn danger" aria-label="刪除" @click.stop="openDelete(item.id)"><Icon name="trash" :size="17" /></button>
+            </div>
           </div>
         </template>
       </template>
@@ -73,7 +94,8 @@ const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sort
         <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
       </div>
     </template>
-    <button class="fab" aria-label="新增資訊" @click="openCreate"><Icon name="plus" :size="23" /></button>
+    <button v-if="!planningRoute" class="fab" aria-label="新增資訊" @click="openCreate"><Icon name="plus" :size="23" /></button>
+    <RoutePlanningBar :allow-entry="true" />
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
     <DrawerForm :open="formOpen" :title="`${editingId ? '編輯' : '新增'}．常用資訊`" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
@@ -81,6 +103,21 @@ const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sort
 </template>
 
 <style scoped>
+.info-row {
+  transition: background-color .15s, border-color .15s, box-shadow .15s;
+}
+.info-row--select-mode {
+  cursor: pointer;
+  user-select: none;
+}
+.info-row--select-mode:active {
+  background: rgba(169, 121, 44, 0.06);
+}
+.info-row--selected {
+  border-color: var(--brass);
+  background: rgba(169, 121, 44, 0.08);
+  box-shadow: var(--shadow-raised);
+}
 .info-link {
   display: inline-flex;
   align-items: center;
@@ -91,5 +128,32 @@ const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sort
   font-weight: 600;
   color: var(--slate);
   text-decoration: none;
+}
+.route-select-badge {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  margin: -3px 0 0 -5px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background-color .15s, border-color .15s, color .15s;
+}
+.route-select-badge--on {
+  background: var(--brass);
+  border-color: var(--brass);
+  color: #fff;
+}
+.route-hint {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--muted);
 }
 </style>

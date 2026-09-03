@@ -4,16 +4,20 @@ import { useChecklist } from '../composables/useChecklist'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { useCategoryFilter } from '../composables/useCategoryFilter'
 import { useCrudDrawer } from '../composables/useCrudDrawer'
+import { useRoutePlanning } from '../composables/useRoutePlanning'
 import { CATEGORY_ICON } from '../icons'
 import { SHARED_CATEGORIES } from '../constants/categories'
 import Icon from '../components/Icon.vue'
 import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
+import RoutePlanningBar from '../components/RoutePlanningBar.vue'
 import { createChecklist, deleteChecklist, patchChecklistChecked, updateChecklist } from '../services/api'
 
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useChecklist(currentTravelId)
+// 行前清單沒有 map_url，不能發起規劃，但若已經在別頁開始規劃，這裡還是要看得到懸浮工具列
+const { planningRoute } = useRoutePlanning(currentTravelId)
 const { formOpen, deleteOpen, editingId, deletingId, busy, actionError, openCreate, openEdit, openDelete, save, confirmDelete } =
   useCrudDrawer(currentTravelId, { create: createChecklist, update: updateChecklist, remove: deleteChecklist }, refresh)
 const fields: DrawerField[] = [
@@ -83,7 +87,8 @@ const progressPct = computed(() => (total.value ? (done.value / total.value) * 1
         <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
       </div>
     </template>
-    <button class="fab" aria-label="新增清單項目" @click="openCreate"><Icon name="plus" :size="23" /></button>
+    <button v-if="!planningRoute" class="fab" aria-label="新增清單項目" @click="openCreate"><Icon name="plus" :size="23" /></button>
+    <RoutePlanningBar :allow-entry="false" />
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
     <DrawerForm :open="formOpen" :title="`${editingId ? '編輯' : '新增'}．行前清單`" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />

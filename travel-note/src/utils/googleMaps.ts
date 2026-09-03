@@ -35,6 +35,7 @@ export async function resolvePlaceFromMapUrl(url: string): Promise<string | null
 }
 
 // https://developers.google.com/maps/documentation/urls/get-started?hl=zh-tw#more-examples
+// travelmode 不帶：Google 地圖會依路線本身自動判斷最相關的交通方式
 export function buildDirectionsUrl(places: string[]): string {
   const params = [
     'api=1',

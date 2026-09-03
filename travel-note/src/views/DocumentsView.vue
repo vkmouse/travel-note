@@ -4,16 +4,20 @@ import { useDocuments } from '../composables/useDocuments'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { useCategoryFilter } from '../composables/useCategoryFilter'
 import { useCrudDrawer } from '../composables/useCrudDrawer'
+import { useRoutePlanning } from '../composables/useRoutePlanning'
 import { CATEGORY_ICON } from '../icons'
 import { SHARED_CATEGORIES } from '../constants/categories'
 import Icon from '../components/Icon.vue'
 import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
+import RoutePlanningBar from '../components/RoutePlanningBar.vue'
 import { createDocument, deleteDocument, updateDocument } from '../services/api'
 
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useDocuments(currentTravelId)
+const { planningRoute, selectedCount, isSelected, selectionNumber, toggle: toggleRoute } = useRoutePlanning(currentTravelId)
+function routeId(id: string) { return `documents:${id}` }
 const { formOpen, deleteOpen, editingId, deletingId, busy, actionError, openCreate, openEdit, openDelete, save, confirmDelete } =
   useCrudDrawer(currentTravelId, { create: createDocument, update: updateDocument, remove: deleteDocument }, refresh)
 const fields: DrawerField[] = [
@@ -56,8 +60,19 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
         </div>
       </div>
 
+      <p v-if="planningRoute" class="route-hint">點選卡片加入路線・已選 {{ selectedCount }} 個地點</p>
+
       <div v-if="filtered.length">
-        <div v-for="doc in filtered" :key="doc.id" class="ticket">
+        <div
+          v-for="doc in filtered"
+          :key="doc.id"
+          class="ticket"
+          :class="{
+            'ticket--select-mode': planningRoute && doc.map_url,
+            'ticket--selected': planningRoute && doc.map_url && isSelected(routeId(doc.id)),
+          }"
+          @click="planningRoute && doc.map_url && toggleRoute(routeId(doc.id))"
+        >
           <div class="ticket-icon">
             <Icon :name="CATEGORY_ICON[doc.category] || 'tag'" :size="20" />
           </div>
@@ -68,11 +83,17 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
                 <div class="ticket-cat">{{ doc.category }}</div>
                 <p class="ticket-title">{{ doc.title }}</p>
               </div>
-              <div class="card-actions"><button class="icon-btn" aria-label="編輯" @click="openEdit(doc.id)"><Icon name="edit" :size="17" /></button><button class="icon-btn danger" aria-label="刪除" @click="openDelete(doc.id)"><Icon name="trash" :size="17" /></button></div>
+              <div v-if="!(planningRoute && doc.map_url)" class="card-actions">
+                <button class="icon-btn" aria-label="編輯" @click="openEdit(doc.id)"><Icon name="edit" :size="17" /></button>
+                <button class="icon-btn danger" aria-label="刪除" @click="openDelete(doc.id)"><Icon name="trash" :size="17" /></button>
+              </div>
+              <div v-else class="route-select-badge" :class="{ 'route-select-badge--on': isSelected(routeId(doc.id)) }">
+                {{ selectionNumber(routeId(doc.id)) }}
+              </div>
             </div>
             <div v-if="dateRange(doc)" class="ticket-dates">{{ dateRange(doc) }}</div>
             <div v-if="doc.note" class="ticket-note"><NoteText :text="doc.note" /></div>
-            <a v-if="doc.map_url" class="ticket-link" :href="doc.map_url" target="_blank" rel="noopener">
+            <a v-if="doc.map_url && !planningRoute" class="ticket-link" :href="doc.map_url" target="_blank" rel="noopener">
               <Icon name="link" :size="13" />
               開啟連結
             </a>
@@ -84,7 +105,8 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
         <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
       </div>
     </template>
-    <button class="fab" aria-label="新增文件" @click="openCreate"><Icon name="plus" :size="23" /></button>
+    <button v-if="!planningRoute" class="fab" aria-label="新增文件" @click="openCreate"><Icon name="plus" :size="23" /></button>
+    <RoutePlanningBar :allow-entry="true" />
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
     <DrawerForm :open="formOpen" :title="`${editingId ? '編輯' : '新增'}．旅行文件`" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
@@ -99,6 +121,19 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
   border-radius: 14px;
   margin-bottom: 12px;
   overflow: hidden;
+  transition: background-color .15s, border-color .15s, box-shadow .15s;
+}
+.ticket--select-mode {
+  cursor: pointer;
+  user-select: none;
+}
+.ticket--select-mode:active {
+  background: rgba(169, 121, 44, 0.06);
+}
+.ticket--selected {
+  border-color: var(--brass);
+  background: rgba(169, 121, 44, 0.08);
+  box-shadow: var(--shadow-raised);
 }
 .ticket-icon {
   width: 50px;
@@ -174,5 +209,31 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
   font-weight: 600;
   color: var(--slate);
   text-decoration: none;
+}
+.route-select-badge {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: transparent;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background-color .15s, border-color .15s, color .15s;
+}
+.route-select-badge--on {
+  background: var(--brass);
+  border-color: var(--brass);
+  color: #fff;
+}
+.route-hint {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--muted);
 }
 </style>

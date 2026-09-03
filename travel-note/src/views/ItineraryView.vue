@@ -3,17 +3,20 @@ import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useItinerary } from '../composables/useItinerary'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
+import { useRoutePlanning } from '../composables/useRoutePlanning'
 import Icon from '../components/Icon.vue'
 import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
+import RoutePlanningBar from '../components/RoutePlanningBar.vue'
 import { createItinerary, deleteItinerary, updateItinerary } from '../services/api'
-import { buildDirectionsUrl, resolvePlaceFromMapUrl } from '../utils/googleMaps'
 
 const route = useRoute()
 const router = useRouter()
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useItinerary(currentTravelId)
+const { planningRoute, selectedCount, isSelected, selectionNumber, toggle: toggleRoute } = useRoutePlanning(currentTravelId)
+function routeId(id: string) { return `itinerary:${id}` }
 const formOpen = ref(false)
 const deleteOpen = ref(false)
 const editingId = ref<string | null>(null)
@@ -66,48 +69,6 @@ const dayItems = computed(() =>
     : [],
 )
 
-// 規劃路線是使用者手動勾選要串進去的項目，不是自動抓當天全部：
-// 進入模式時預設全選（等於維持原本「整天路線」的行為），使用者可以再自己取消勾選。
-const routableItems = computed(() => dayItems.value.filter((it) => it.map_url))
-const planningRoute = ref(false)
-const selectedRouteIds = ref<Set<string>>(new Set())
-const allRoutableSelected = computed(
-  () => routableItems.value.length > 0 && routableItems.value.every((it) => selectedRouteIds.value.has(it.id)),
-)
-
-function startPlanning() {
-  selectedRouteIds.value = new Set(routableItems.value.map((it) => it.id))
-  planningRoute.value = true
-}
-function toggleSelectAllRoute() {
-  selectedRouteIds.value = allRoutableSelected.value ? new Set() : new Set(routableItems.value.map((it) => it.id))
-}
-function toggleRouteItem(id: string) {
-  const next = new Set(selectedRouteIds.value)
-  if (next.has(id)) next.delete(id)
-  else next.add(id)
-  selectedRouteIds.value = next
-}
-function closePlanning() {
-  planningRoute.value = false
-  selectedRouteIds.value = new Set()
-}
-watch(activeDay, closePlanning)
-
-// 被選取項目湊到 >= 2 個才試著解析成地點串路線；用 day 比對捨棄切天後才回來的過期結果。
-const routeUrl = ref<string | null>(null)
-watch(
-  selectedRouteIds,
-  async (ids) => {
-    const day = activeDay.value
-    if (ids.size < 2) { routeUrl.value = null; return }
-    const mapUrls = dayItems.value.filter((it) => ids.has(it.id) && it.map_url).map((it) => it.map_url!)
-    const places = (await Promise.all(mapUrls.map(resolvePlaceFromMapUrl))).filter((p): p is string => !!p)
-    if (activeDay.value !== day) return
-    routeUrl.value = places.length >= 2 ? buildDirectionsUrl(places) : null
-  },
-)
-
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 function weekday(d: string) {
   return '週' + WEEKDAYS[new Date(d).getDay()]
@@ -135,27 +96,7 @@ function dayNum(d: string) {
         </div>
       </div>
 
-      <div v-if="routableItems.length >= 2" class="route-toolbar-row">
-        <button v-if="!planningRoute" class="route-toggle-btn" type="button" @click="startPlanning">
-          <Icon name="compass" :size="14" />
-          規劃路線
-        </button>
-        <template v-else>
-          <p class="route-hint">點選卡片加入路線</p>
-          <button class="route-tool-btn" type="button" @click="toggleSelectAllRoute">
-            <Icon name="selectall" :size="14" />
-            {{ allRoutableSelected ? '取消全選' : '全選' }}
-          </button>
-          <a v-if="routeUrl" class="route-link" :href="routeUrl" target="_blank" rel="noopener" @click="closePlanning">
-            <Icon name="compass" :size="14" />
-            開啟路線（{{ selectedRouteIds.size }}）
-          </a>
-          <span v-else class="route-link route-link--disabled">選 2 個以上地點</span>
-          <button class="route-tool-btn" type="button" aria-label="取消規劃" @click="closePlanning">
-            <Icon name="close" :size="14" />
-          </button>
-        </template>
-      </div>
+      <p v-if="planningRoute" class="route-hint">點選卡片加入路線・已選 {{ selectedCount }} 個地點</p>
 
       <div v-if="dayItems.length" class="timeline">
         <div v-for="(it, idx) in dayItems" :key="it.id" class="tl-item">
@@ -169,9 +110,9 @@ function dayNum(d: string) {
               class="tl-card"
               :class="{
                 'tl-card--select-mode': planningRoute && it.map_url,
-                'tl-card--selected': planningRoute && it.map_url && selectedRouteIds.has(it.id),
+                'tl-card--selected': planningRoute && it.map_url && isSelected(routeId(it.id)),
               }"
-              @click="planningRoute && it.map_url && toggleRouteItem(it.id)"
+              @click="planningRoute && it.map_url && toggleRoute(routeId(it.id))"
             >
               <div class="tl-card-head">
                 <p class="tl-title">{{ it.title }}</p>
@@ -179,8 +120,8 @@ function dayNum(d: string) {
                   <button class="icon-btn" aria-label="編輯" @click="openEdit(it.id)"><Icon name="edit" :size="17" /></button>
                   <button class="icon-btn danger" aria-label="刪除" @click="openDelete(it.id)"><Icon name="trash" :size="17" /></button>
                 </div>
-                <div v-else class="route-select-badge" :class="{ 'route-select-badge--on': selectedRouteIds.has(it.id) }">
-                  <Icon name="check" :size="14" />
+                <div v-else class="route-select-badge" :class="{ 'route-select-badge--on': isSelected(routeId(it.id)) }">
+                  {{ selectionNumber(routeId(it.id)) }}
                 </div>
               </div>
               <p v-if="it.location" class="tl-loc">
@@ -201,7 +142,8 @@ function dayNum(d: string) {
         <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
       </div>
     </template>
-    <button class="fab" aria-label="新增行程" @click="openCreate"><Icon name="plus" :size="23" /></button>
+    <button v-if="!planningRoute" class="fab" aria-label="新增行程" @click="openCreate"><Icon name="plus" :size="23" /></button>
+    <RoutePlanningBar :allow-entry="true" />
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
     <DrawerForm :open="formOpen" title="行程" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
@@ -366,6 +308,9 @@ function dayNum(d: string) {
   align-items: center;
   justify-content: center;
   color: transparent;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
   transition: background-color .15s, border-color .15s, color .15s;
 }
 .route-select-badge--on {
@@ -373,51 +318,9 @@ function dayNum(d: string) {
   border-color: var(--brass);
   color: #fff;
 }
-.route-toolbar-row {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 14px;
-}
 .route-hint {
-  margin: 0;
-  margin-right: auto;
+  margin: 0 0 14px;
   font-size: 12px;
   color: var(--muted);
-}
-.route-toggle-btn,
-.route-tool-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: var(--r-sm);
-  background: var(--card);
-  border: 1px solid var(--line);
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--brass);
-}
-.route-tool-btn {
-  padding: 8px 10px;
-  color: var(--slate);
-}
-.route-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  border-radius: var(--r-sm);
-  background: var(--card);
-  border: 1px solid var(--line);
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--brass);
-  text-decoration: none;
-}
-.route-link--disabled {
-  color: var(--muted);
-  border-style: dashed;
 }
 </style>
