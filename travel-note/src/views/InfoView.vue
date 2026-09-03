@@ -94,8 +94,7 @@ const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sort
         <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
       </div>
     </template>
-    <button v-if="!planningRoute" class="fab" aria-label="新增資訊" @click="openCreate"><Icon name="plus" :size="23" /></button>
-    <RoutePlanningBar :allow-entry="true" />
+    <RoutePlanningBar :allow-entry="true" page="info" @add="openCreate" />
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
     <DrawerForm :open="formOpen" :title="`${editingId ? '編輯' : '新增'}．常用資訊`" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />

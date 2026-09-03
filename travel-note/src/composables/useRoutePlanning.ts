@@ -39,9 +39,6 @@ export function useRoutePlanning(travelId: Ref<string | null>) {
   })
 
   const selectedIdSet = computed(() => new Set(selectionOrder.value))
-  const allSelected = computed(
-    () => routableItems.value.length > 0 && routableItems.value.every((it) => selectedIdSet.value.has(it.id)),
-  )
 
   function isSelected(id: string) {
     return selectedIdSet.value.has(id)
@@ -56,11 +53,29 @@ export function useRoutePlanning(travelId: Ref<string | null>) {
       : [...selectionOrder.value, id]
   }
   function startPlanning() {
-    selectionOrder.value = routableItems.value.map((it) => it.id)
+    // 預設不勾選任何項目，讓使用者自己選（或用「全選」）
+    selectionOrder.value = []
     planningRoute.value = true
   }
-  function toggleSelectAll() {
-    selectionOrder.value = allSelected.value ? [] : routableItems.value.map((it) => it.id)
+  // 「全選」只作用在目前頁面（page 對應 routableItems 的 id 前綴），
+  // 不影響其他頁已經勾選的項目
+  function pageRoutableItems(page: string) {
+    return routableItems.value.filter((it) => it.id.startsWith(`${page}:`))
+  }
+  function isPageFullySelected(page: string) {
+    const items = pageRoutableItems(page)
+    return items.length > 0 && items.every((it) => selectedIdSet.value.has(it.id))
+  }
+  function toggleSelectAllOnPage(page: string) {
+    const items = pageRoutableItems(page)
+    if (items.length === 0) return
+    if (isPageFullySelected(page)) {
+      const ids = new Set(items.map((it) => it.id))
+      selectionOrder.value = selectionOrder.value.filter((id) => !ids.has(id))
+    } else {
+      const toAdd = items.map((it) => it.id).filter((id) => !selectedIdSet.value.has(id))
+      selectionOrder.value = [...selectionOrder.value, ...toAdd]
+    }
   }
   function closePlanning() {
     planningRoute.value = false
@@ -85,13 +100,14 @@ export function useRoutePlanning(travelId: Ref<string | null>) {
     planningRoute,
     routableItems,
     selectedCount: computed(() => selectionOrder.value.length),
-    allSelected,
     routeUrl,
     isSelected,
     selectionNumber,
     toggle,
     startPlanning,
-    toggleSelectAll,
+    pageRoutableItems,
+    isPageFullySelected,
+    toggleSelectAllOnPage,
     closePlanning,
   }
 }
