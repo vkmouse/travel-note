@@ -1,5 +1,6 @@
 import type { AuthContext, Env } from '../types'
 import { jsonError, jsonOk } from '../lib/response'
+import { sha256Hex } from '../utils/hash'
 
 const MAX_ROWS_PER_TABLE = 500
 const MAX_STRING_LEN = 4000
@@ -101,8 +102,22 @@ export const onRequestPost: PagesFunction<Env, any, AuthContext> = async (contex
   const userId = context.data.userId
 
   try {
-    const body = await context.request.json<Record<string, unknown>>().catch(() => null)
+    // 在解析成物件之前先保留原始文字：新建 / 取代旅行都算「匯入」，
+    // 存一份原文備份，之後若匯入邏輯有問題可以直接從 DB 查原始資料手動復原。
+    // hash 相同（同一份內容）就用 INSERT OR IGNORE 略過，不重複備份。
+    const rawText = await context.request.text()
+    let body: Record<string, unknown> | null
+    try {
+      body = JSON.parse(rawText)
+    } catch {
+      body = null
+    }
     if (!body || typeof body !== 'object') return jsonError('建立內容不是有效的 JSON', 400)
+
+    const rawHash = await sha256Hex(rawText)
+    await DB.prepare(`INSERT OR IGNORE INTO import_raw_logs (hash, raw_data, user_id) VALUES (?, ?, ?)`)
+      .bind(rawHash, rawText, userId)
+      .run()
 
     const title = str(body.title, 200).trim()
     if (!title) return jsonError('title 為必填', 400)
