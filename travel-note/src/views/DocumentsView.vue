@@ -82,7 +82,6 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
           <div class="ticket-icon">
             <Icon :name="CATEGORY_ICON[doc.category] || 'tag'" :size="20" />
           </div>
-          <div class="ticket-divider"></div>
           <div class="ticket-body">
             <div class="ticket-head">
               <div>
@@ -164,27 +163,6 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
   display: flex;
   align-items: center;
   justify-content: center;
-}
-.ticket-divider {
-  width: 0;
-  border-left: 1.5px dashed var(--line);
-  position: relative;
-}
-.ticket-divider::before,
-.ticket-divider::after {
-  content: '';
-  position: absolute;
-  width: 11px;
-  height: 11px;
-  background: var(--paper);
-  border-radius: 50%;
-  left: -6px;
-}
-.ticket-divider::before {
-  top: -6px;
-}
-.ticket-divider::after {
-  bottom: -6px;
 }
 .ticket-body {
   padding: 11px 8px 11px 14px;
