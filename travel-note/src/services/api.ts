@@ -44,6 +44,44 @@ export function fetchTravels(): Promise<Travel[]> {
   return getJson('/api/travels', '無法取得旅行清單')
 }
 
+// 展開短網址的結果快取進 localStorage，同網址不用每次都重打 API；
+// 進行中的請求另外用記憶體 Map 追蹤，避免同一網址還沒回來時被重複觸發。
+// 失敗不快取，讓使用者可以直接重貼再試一次。
+const REDIRECT_CACHE_PREFIX = 'redirect_cache:'
+const redirectInFlight = new Map<string, Promise<{ location: string | null }>>()
+
+function readRedirectCache(url: string): { location: string | null } | null {
+  try {
+    const raw = localStorage.getItem(REDIRECT_CACHE_PREFIX + url)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+function writeRedirectCache(url: string, result: { location: string | null }) {
+  try {
+    localStorage.setItem(REDIRECT_CACHE_PREFIX + url, JSON.stringify(result))
+  } catch {
+    // localStorage 滿了或被封鎖就放棄快取，不影響解析本身
+  }
+}
+
+export function resolveMapRedirect(url: string): Promise<{ location: string | null }> {
+  const cached = readRedirectCache(url)
+  if (cached) return Promise.resolve(cached)
+
+  const pending = redirectInFlight.get(url)
+  if (pending) return pending
+
+  const request = getJson<{ location: string | null }>(`/api/redirects?url=${encodeURIComponent(url)}`, '解析短網址失敗')
+    .then((result) => { writeRedirectCache(url, result); return result })
+    .finally(() => redirectInFlight.delete(url))
+
+  redirectInFlight.set(url, request)
+  return request
+}
+
 // POST /api/travels 除了 title/date_start/date_end，也可以一次帶入
 // itinerary / documents / info / checklist 陣列，用同一支 API 建立完整內容的旅行
 // （不帶就等於建立空白旅行，帶了就等於「範例行程」「匯入旅行」）

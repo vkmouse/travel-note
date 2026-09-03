@@ -22,7 +22,7 @@ const actionError = ref('')
 const fields: DrawerField[] = [
   { key: 'date', label: '日期時間', type: 'date', required: true, pairedTimeKey: 'time' }, { key: 'time', label: '時間', type: 'time' },
   { key: 'title', label: '行程名稱', type: 'text', required: true, placeholder: '輸入行程名稱' }, { key: 'location', label: '地點', type: 'text' },
-  { key: 'map_url', label: '地圖連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '支援 markdown：**粗體**、*斜體*、`代碼`、- 清單、[文字](網址)。連結目標打成 [住宿資訊](旅行文件/住宿) 這種路徑，就會變成能直接點過去的內部連結' },
+  { key: 'map_url', label: '地圖連結', type: 'url', placeholder: 'Google Maps 短網址', locationFillKey: 'location' }, { key: 'note', label: '備註', type: 'textarea', hint: '支援 markdown：**粗體**、*斜體*、`代碼`、- 清單、[文字](網址)。連結目標打成 [住宿資訊](旅行文件/住宿) 這種路徑，就會變成能直接點過去的內部連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { date: '' })
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }

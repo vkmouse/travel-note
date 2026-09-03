@@ -3,6 +3,10 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { CATEGORY_ICON } from '../icons'
 import Icon from './Icon.vue'
 import CalendarPicker from './CalendarPicker.vue'
+import { resolveMapRedirect } from '../services/api'
+import { parseMapsPlaceName } from '../utils/googleMaps'
+
+const GOOGLE_MAPS_SHORT_LINK_PREFIX = 'https://maps.app.goo.gl/'
 
 export interface DrawerField {
   key: string
@@ -17,6 +21,8 @@ export interface DrawerField {
   // 意義明確的欄位（標題、地點、連結…）拿掉頂部 label，改用 placeholder 說明；
   // 不指定時，text/textarea 退回用 label 本身當 placeholder，url 則退回「貼上連結」
   placeholder?: string
+  // 貼上 Google Maps 短網址時，若此欄位對應的目標欄位是空的，自動展開短網址並填入解析出的地點名稱
+  locationFillKey?: string
 }
 
 const props = defineProps<{
@@ -114,6 +120,20 @@ async function copyField(key: string) {
   }
 }
 
+async function handleMapUrlPaste(field: DrawerField, event: ClipboardEvent) {
+  const locationKey = field.locationFillKey
+  if (!locationKey || form.value[locationKey]?.trim()) return
+  const pasted = event.clipboardData?.getData('text') ?? ''
+  if (!pasted.startsWith(GOOGLE_MAPS_SHORT_LINK_PREFIX)) return
+  try {
+    const { location } = await resolveMapRedirect(pasted)
+    const placeName = location && parseMapsPlaceName(location)
+    if (placeName) form.value[locationKey] = placeName
+  } catch {
+    // 展開失敗就當作沒發生，使用者仍可自行輸入地點
+  }
+}
+
 function submit() {
   const missing = props.fields.find((field) => field.required && !form.value[field.key]?.trim())
   if (missing) {
@@ -187,6 +207,7 @@ function submit() {
                 :type="field.type"
                 :placeholder="placeholderFor(field)"
                 :aria-label="field.label"
+                @paste="handleMapUrlPaste(field, $event)"
               />
               <p v-if="field.hint" class="f-hint">{{ field.hint }}</p>
             </div>
