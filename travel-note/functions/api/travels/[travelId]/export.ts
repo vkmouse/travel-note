@@ -20,7 +20,7 @@ export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (c
     // 匯入時再依陣列位置重新編號，使用者手寫/編輯匯出文字時不用管這個欄位
     const [itinerary, documents, info, checklist] = await Promise.all([
       DB.prepare(
-        `SELECT date, time, title, location, map_url, note FROM itinerary WHERE travel_id = ? ORDER BY date ASC, "order" ASC`,
+        `SELECT date, time, title, map_url, note FROM itinerary WHERE travel_id = ? ORDER BY date ASC, "order" ASC`,
       ).bind(travelId).all(),
       DB.prepare(
         `SELECT category, title, date_start, date_end, map_url, note FROM documents WHERE travel_id = ? ORDER BY "order" ASC`,

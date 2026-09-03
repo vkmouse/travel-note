@@ -21,7 +21,6 @@ export interface ItineraryItem {
   date: string
   time: string | null
   title: string
-  location: string | null
   map_url: string | null
   note: string | null
 }
@@ -93,7 +92,7 @@ export interface TravelExportPayload {
   type: 'travel-note.export'
   version: number
   travel: { title: string; date_start: string | null; date_end: string | null }
-  itinerary: Array<{ date: string; time: string | null; title: string; location: string | null; map_url: string | null; note: string | null }>
+  itinerary: Array<{ date: string; time: string | null; title: string; map_url: string | null; note: string | null }>
   documents: Array<{ category: string; title: string; date_start: string | null; date_end: string | null; map_url: string | null; note: string | null }>
   info: Array<{ category: string; title: string; map_url: string | null; note: string | null; is_checked: boolean }>
   checklist: Array<{ category: string | null; title: string; note: string | null; is_checked: boolean }>

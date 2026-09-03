@@ -8,7 +8,7 @@ export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (c
   try {
     // 存取權已在 middleware 檢查過，這裡不再用 user_id 縮小範圍，讓共享者互相看得到彼此的項目
     const { results } = await DB.prepare(
-      `SELECT id, "order", date, time, title, location, map_url, note
+      `SELECT id, "order", date, time, title, map_url, note
        FROM itinerary WHERE travel_id = ?
        ORDER BY date ASC, "order" ASC`,
     ).bind(travelId).all()
@@ -31,7 +31,6 @@ export const onRequestPost: PagesFunction<Env, any, TravelAuthContext> = async (
     if (!date || !title) return jsonError('date 與 title 為必填', 400)
 
     const time = String(body.time ?? '')
-    const location = String(body.location ?? '')
     const map_url = String(body.map_url ?? '')
     const note = String(body.note ?? '')
 
@@ -45,13 +44,13 @@ export const onRequestPost: PagesFunction<Env, any, TravelAuthContext> = async (
 
     const id = `it_${crypto.randomUUID().slice(0, 8)}`
     await DB.prepare(
-      `INSERT INTO itinerary (id, travel_id, user_id, "order", date, time, title, location, map_url, note)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO itinerary (id, travel_id, user_id, "order", date, time, title, map_url, note)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-      .bind(id, travelId, userId, order, date, time, title, location, map_url, note)
+      .bind(id, travelId, userId, order, date, time, title, map_url, note)
       .run()
 
-    return jsonOk({ id, order, date, time, title, location, map_url, note })
+    return jsonOk({ id, order, date, time, title, map_url, note })
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'create failed', 500)
   }

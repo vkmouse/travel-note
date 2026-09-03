@@ -5,6 +5,7 @@ import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { useCategoryFilter } from '../composables/useCategoryFilter'
 import { useCrudDrawer } from '../composables/useCrudDrawer'
 import { useRoutePlanning } from '../composables/useRoutePlanning'
+import { useMapPlaceName } from '../composables/useMapPlaceName'
 import { CATEGORY_ICON } from '../icons'
 import { SHARED_CATEGORIES } from '../constants/categories'
 import Icon from '../components/Icon.vue'
@@ -17,6 +18,7 @@ import { createDocument, deleteDocument, updateDocument } from '../services/api'
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useDocuments(currentTravelId)
 const { planningRoute, selectedCount, isSelected, selectionNumber, toggle: toggleRoute } = useRoutePlanning(currentTravelId)
+const { placeNameOf } = useMapPlaceName()
 function routeId(id: string) { return `documents:${id}` }
 const { formOpen, deleteOpen, editingId, deletingId, busy, actionError, openCreate, openEdit, openDelete, save, confirmDelete } =
   useCrudDrawer(currentTravelId, { create: createDocument, update: updateDocument, remove: deleteDocument }, refresh)
@@ -96,6 +98,10 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
               </div>
             </div>
             <div v-if="dateRange(doc)" class="ticket-dates">{{ dateRange(doc) }}</div>
+            <p v-if="placeNameOf(doc.map_url)" class="ticket-loc">
+              <Icon name="pin" :size="13" />
+              {{ placeNameOf(doc.map_url) }}
+            </p>
             <div v-if="doc.note" class="ticket-note"><NoteText :text="doc.note" /></div>
             <a v-if="doc.map_url && !planningRoute" class="ticket-link" :href="doc.map_url" target="_blank" rel="noopener">
               <Icon name="link" :size="13" />
@@ -202,6 +208,14 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
   font-size: 11px;
   color: var(--muted);
   margin: 6px 0 4px;
+}
+.ticket-loc {
+  font-size: 12.5px;
+  color: var(--muted);
+  margin: 6px 0 2px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 .ticket-note {
   font-size: 12.5px;

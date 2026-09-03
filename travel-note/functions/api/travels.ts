@@ -55,12 +55,12 @@ function buildDetailInserts(DB: D1Database, travelId: string, userId: string, co
   return [
     ...content.itinerary.map((it, i) =>
       DB.prepare(
-        `INSERT INTO itinerary (id, travel_id, user_id, "order", date, time, title, location, map_url, note)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO itinerary (id, travel_id, user_id, "order", date, time, title, map_url, note)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).bind(
         `it_${travelId}_${i}`, travelId, userId, i + 1,
         str(it.date, 20), nullableStr(it.time, 20), str(it.title, 200),
-        nullableStr(it.location, 300), nullableStr(it.map_url, 1000), nullableStr(it.note, MAX_STRING_LEN),
+        nullableStr(it.map_url, 1000), nullableStr(it.note, MAX_STRING_LEN),
       ),
     ),
     ...content.documents.map((doc, i) =>

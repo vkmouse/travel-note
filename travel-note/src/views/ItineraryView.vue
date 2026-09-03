@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useItinerary } from '../composables/useItinerary'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { useRoutePlanning } from '../composables/useRoutePlanning'
+import { useMapPlaceName } from '../composables/useMapPlaceName'
 import Icon from '../components/Icon.vue'
 import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
@@ -16,6 +17,7 @@ const router = useRouter()
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useItinerary(currentTravelId)
 const { planningRoute, selectedCount, isSelected, selectionNumber, toggle: toggleRoute } = useRoutePlanning(currentTravelId)
+const { placeNameOf } = useMapPlaceName()
 function routeId(id: string) { return `itinerary:${id}` }
 const formOpen = ref(false)
 const deleteOpen = ref(false)
@@ -25,8 +27,8 @@ const busy = ref(false)
 const actionError = ref('')
 const fields: DrawerField[] = [
   { key: 'date', label: '日期時間', type: 'date', required: true, pairedTimeKey: 'time' }, { key: 'time', label: '時間', type: 'time' },
-  { key: 'title', label: '行程名稱', type: 'text', required: true, placeholder: '輸入行程名稱' }, { key: 'location', label: '地點', type: 'text' },
-  { key: 'map_url', label: '地圖連結', type: 'url', placeholder: 'Google Maps 短網址', locationFillKey: 'location' }, { key: 'note', label: '備註', type: 'textarea', hint: '支援 markdown：**粗體**、*斜體*、`代碼`、- 清單、[文字](網址)。連結目標打成 [住宿資訊](旅行文件/住宿) 這種路徑，就會變成能直接點過去的內部連結' },
+  { key: 'title', label: '行程名稱', type: 'text', required: true, placeholder: '輸入行程名稱' },
+  { key: 'map_url', label: '地圖連結', type: 'url', placeholder: 'Google Maps 短網址' }, { key: 'note', label: '備註', type: 'textarea', hint: '支援 markdown：**粗體**、*斜體*、`代碼`、- 清單、[文字](網址)。連結目標打成 [住宿資訊](旅行文件/住宿) 這種路徑，就會變成能直接點過去的內部連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { date: '' })
 function openCreate() { editingId.value = null; actionError.value = ''; formOpen.value = true }
@@ -128,9 +130,9 @@ function dayNum(d: string) {
                   {{ selectionNumber(routeId(it.id)) }}
                 </div>
               </div>
-              <p v-if="it.location" class="tl-loc">
+              <p v-if="placeNameOf(it.map_url)" class="tl-loc">
                 <Icon name="pin" :size="13" />
-                {{ it.location }}
+                {{ placeNameOf(it.map_url) }}
               </p>
               <div v-if="it.note" class="tl-note"><NoteText :text="it.note" /></div>
               <a v-if="it.map_url && !planningRoute" class="map-link" :href="it.map_url" target="_blank" rel="noopener">

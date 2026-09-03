@@ -5,6 +5,7 @@ import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { useCategoryFilter } from '../composables/useCategoryFilter'
 import { useCrudDrawer } from '../composables/useCrudDrawer'
 import { useRoutePlanning } from '../composables/useRoutePlanning'
+import { useMapPlaceName } from '../composables/useMapPlaceName'
 import { CATEGORY_ICON } from '../icons'
 import { SHARED_CATEGORIES } from '../constants/categories'
 import Icon from '../components/Icon.vue'
@@ -17,6 +18,7 @@ import { createInfo, deleteInfo, patchInfoChecked, updateInfo } from '../service
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useInfo(currentTravelId)
 const { planningRoute, selectedCount, isSelected, selectionNumber, toggle: toggleRoute } = useRoutePlanning(currentTravelId)
+const { placeNameOf } = useMapPlaceName()
 function routeId(id: string) { return `info:${id}` }
 const { formOpen, deleteOpen, editingId, deletingId, busy, actionError, openCreate, openEdit, openDelete, save, confirmDelete } =
   useCrudDrawer(currentTravelId, { create: createInfo, update: updateInfo, remove: deleteInfo }, refresh)
@@ -80,6 +82,10 @@ const selectableIds = computed(() => filtered.value.filter((i) => i.map_url).map
             </div>
             <div class="info-body">
               <p class="info-title" :class="{ done: item.is_checked }">{{ item.title }}</p>
+              <p v-if="placeNameOf(item.map_url)" class="info-loc">
+                <Icon name="pin" :size="13" />
+                {{ placeNameOf(item.map_url) }}
+              </p>
               <div v-if="item.note" class="info-note"><NoteText :text="item.note" /></div>
               <a v-if="item.map_url && !planningRoute" class="info-link" :href="item.map_url" target="_blank" rel="noopener">
                 <Icon name="link" :size="13" />

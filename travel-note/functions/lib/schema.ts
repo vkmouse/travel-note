@@ -21,7 +21,6 @@ export const CREATE_TABLE_STATEMENTS = [
     date TEXT NOT NULL,
     time TEXT,
     title TEXT NOT NULL,
-    location TEXT,
     map_url TEXT,
     note TEXT
   )`,

@@ -3,8 +3,7 @@ import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { CATEGORY_ICON } from '../icons'
 import Icon from './Icon.vue'
 import CalendarPicker from './CalendarPicker.vue'
-import { resolveMapRedirect } from '../services/api'
-import { GOOGLE_MAPS_SHORT_LINK_PREFIX, parseMapsPlaceName, resolvePlaceFromMapUrl } from '../utils/googleMaps'
+import { resolvePlaceFromMapUrl } from '../utils/googleMaps'
 
 export interface DrawerField {
   key: string
@@ -19,8 +18,6 @@ export interface DrawerField {
   // 意義明確的欄位（標題、地點、連結…）拿掉頂部 label，改用 placeholder 說明；
   // 不指定時，text/textarea 退回用 label 本身當 placeholder，url 則退回「貼上連結」
   placeholder?: string
-  // 貼上 Google Maps 短網址時，若此欄位對應的目標欄位是空的，自動展開短網址並填入解析出的地點名稱
-  locationFillKey?: string
 }
 
 const props = defineProps<{
@@ -44,8 +41,8 @@ const error = ref('')
 const textareaRefs: Record<string, HTMLTextAreaElement | null> = {}
 const copiedKey = ref('')
 
-// map_url 地點名稱預覽：跟下面「貼上短網址自動填 location」是分開的獨立功能，
-// 純顯示用，不會寫回任何欄位。用遞增的 requestId 擋掉「查詢途中又改了網址」的過期回應。
+// map_url 地點名稱預覽：純顯示用的獨立功能，不會寫回任何欄位。
+// 用遞增的 requestId 擋掉「查詢途中又改了網址」的過期回應。
 type MapPreviewState = { status: 'idle' | 'loading' | 'done' | 'error'; name: string | null }
 const mapPreview = reactive<Record<string, MapPreviewState>>({})
 const previewRequestId: Record<string, number> = {}
@@ -160,20 +157,6 @@ async function copyField(key: string) {
   }
 }
 
-async function handleMapUrlPaste(field: DrawerField, event: ClipboardEvent) {
-  const locationKey = field.locationFillKey
-  if (!locationKey || form.value[locationKey]?.trim()) return
-  const pasted = event.clipboardData?.getData('text') ?? ''
-  if (!pasted.startsWith(GOOGLE_MAPS_SHORT_LINK_PREFIX)) return
-  try {
-    const { location } = await resolveMapRedirect(pasted)
-    const placeName = location && parseMapsPlaceName(location)
-    if (placeName) form.value[locationKey] = placeName
-  } catch {
-    // 展開失敗就當作沒發生，使用者仍可自行輸入地點
-  }
-}
-
 function submit() {
   const missing = props.fields.find((field) => field.required && !form.value[field.key]?.trim())
   if (missing) {
@@ -247,7 +230,6 @@ function submit() {
                 :type="field.type"
                 :placeholder="placeholderFor(field)"
                 :aria-label="field.label"
-                @paste="handleMapUrlPaste(field, $event)"
                 @input="field.type === 'url' && handleUrlPreviewInput(field.key, $event)"
               />
               <p
