@@ -8,6 +8,7 @@ import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import { createItinerary, deleteItinerary, updateItinerary } from '../services/api'
+import { buildDirectionsUrl, resolvePlaceFromMapUrl } from '../utils/googleMaps'
 
 const route = useRoute()
 const router = useRouter()
@@ -65,6 +66,22 @@ const dayItems = computed(() =>
     : [],
 )
 
+// 當天 >= 2 個有 map_url 的行程就試著串成一條路線：每個 map_url 先轉成地點名稱，
+// 解析不出來的跳過，最後湊到 >= 2 個地點才產生連結。切天的話用 day 比對捨棄過期結果。
+const routeUrl = ref<string | null>(null)
+watch(
+  dayItems,
+  async (list) => {
+    const day = activeDay.value
+    const mapUrls = list.map((it) => it.map_url).filter((u): u is string => !!u)
+    if (mapUrls.length < 2) { routeUrl.value = null; return }
+    const places = (await Promise.all(mapUrls.map(resolvePlaceFromMapUrl))).filter((p): p is string => !!p)
+    if (activeDay.value !== day) return
+    routeUrl.value = places.length >= 2 ? buildDirectionsUrl(places) : null
+  },
+  { immediate: true },
+)
+
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 function weekday(d: string) {
   return '週' + WEEKDAYS[new Date(d).getDay()]
@@ -91,6 +108,11 @@ function dayNum(d: string) {
           <div class="dnum">{{ dayNum(d) }}</div>
         </div>
       </div>
+
+      <a v-if="routeUrl" class="route-link" :href="routeUrl" target="_blank" rel="noopener">
+        <Icon name="compass" :size="14" />
+        規劃整天路線
+      </a>
 
       <div v-if="dayItems.length" class="timeline">
         <div v-for="(it, idx) in dayItems" :key="it.id" class="tl-item">
@@ -261,6 +283,20 @@ function dayNum(d: string) {
   font-size: 12px;
   font-weight: 600;
   color: var(--slate);
+  text-decoration: none;
+}
+.route-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 8px 14px;
+  border-radius: var(--r-sm);
+  background: var(--card);
+  border: 1px solid var(--line);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--brass);
   text-decoration: none;
 }
 </style>

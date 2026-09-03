@@ -4,9 +4,7 @@ import { CATEGORY_ICON } from '../icons'
 import Icon from './Icon.vue'
 import CalendarPicker from './CalendarPicker.vue'
 import { resolveMapRedirect } from '../services/api'
-import { parseMapsPlaceName } from '../utils/googleMaps'
-
-const GOOGLE_MAPS_SHORT_LINK_PREFIX = 'https://maps.app.goo.gl/'
+import { GOOGLE_MAPS_SHORT_LINK_PREFIX, parseMapsPlaceName } from '../utils/googleMaps'
 
 export interface DrawerField {
   key: string
