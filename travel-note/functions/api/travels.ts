@@ -65,23 +65,23 @@ function buildDetailInserts(DB: D1Database, travelId: string, userId: string, co
     ),
     ...content.documents.map((doc, i) =>
       DB.prepare(
-        `INSERT INTO documents (id, travel_id, user_id, "order", category, title, date_start, date_end, link, note)
+        `INSERT INTO documents (id, travel_id, user_id, "order", category, title, date_start, date_end, map_url, note)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).bind(
         `doc_${travelId}_${i}`, travelId, userId, i + 1,
         str(doc.category, 50), str(doc.title, 200),
         nullableStr(doc.date_start, 20), nullableStr(doc.date_end, 20),
-        nullableStr(doc.link, 1000), nullableStr(doc.note, MAX_STRING_LEN),
+        nullableStr(doc.map_url, 1000), nullableStr(doc.note, MAX_STRING_LEN),
       ),
     ),
     ...content.info.map((row, i) =>
       DB.prepare(
-        `INSERT INTO info (id, travel_id, user_id, "order", category, title, link, note, is_checked)
+        `INSERT INTO info (id, travel_id, user_id, "order", category, title, map_url, note, is_checked)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       ).bind(
         `info_${travelId}_${i}`, travelId, userId, i + 1,
         str(row.category, 50), str(row.title, 200),
-        nullableStr(row.link, 1000), nullableStr(row.note, MAX_STRING_LEN), bool(row.is_checked) ? 1 : 0,
+        nullableStr(row.map_url, 1000), nullableStr(row.note, MAX_STRING_LEN), bool(row.is_checked) ? 1 : 0,
       ),
     ),
     ...content.checklist.map((row, i) =>

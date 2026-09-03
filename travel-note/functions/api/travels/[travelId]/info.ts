@@ -11,12 +11,12 @@ export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (c
     // 存取權已在 middleware 檢查過，這裡不再用 user_id 縮小範圍，讓共享者互相看得到彼此的項目
     const stmt = category
       ? DB.prepare(
-          `SELECT id, "order", category, title, link, note, is_checked
+          `SELECT id, "order", category, title, map_url, note, is_checked
            FROM info WHERE travel_id = ? AND category = ?
            ORDER BY "order" ASC`,
         ).bind(travelId, category)
       : DB.prepare(
-          `SELECT id, "order", category, title, link, note, is_checked
+          `SELECT id, "order", category, title, map_url, note, is_checked
            FROM info WHERE travel_id = ?
            ORDER BY "order" ASC`,
         ).bind(travelId)
@@ -41,7 +41,7 @@ export const onRequestPost: PagesFunction<Env, any, TravelAuthContext> = async (
     if (!category || !title) return jsonError('category 與 title 為必填', 400)
     if (!isValidCategory(category, INFO_CATEGORIES)) return jsonError(`category 必須是：${INFO_CATEGORIES.join('、')}`, 400)
 
-    const link = String(body.link ?? '')
+    const map_url = String(body.map_url ?? '')
     const note = String(body.note ?? '')
 
     const { results } = await DB.prepare(
@@ -51,13 +51,13 @@ export const onRequestPost: PagesFunction<Env, any, TravelAuthContext> = async (
 
     const id = `info_${crypto.randomUUID().slice(0, 8)}`
     await DB.prepare(
-      `INSERT INTO info (id, travel_id, user_id, "order", category, title, link, note, is_checked)
+      `INSERT INTO info (id, travel_id, user_id, "order", category, title, map_url, note, is_checked)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
     )
-      .bind(id, travelId, userId, order, category, title, link, note)
+      .bind(id, travelId, userId, order, category, title, map_url, note)
       .run()
 
-    return jsonOk({ id, order, category, title, link, note, is_checked: false })
+    return jsonOk({ id, order, category, title, map_url, note, is_checked: false })
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'create failed', 500)
   }

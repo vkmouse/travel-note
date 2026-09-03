@@ -35,7 +35,7 @@ export interface DocumentItem {
   title: string
   date_start: string | null
   date_end: string | null
-  link: string | null
+  map_url: string | null
   note: string | null
 }
 
@@ -46,7 +46,7 @@ export interface InfoItem {
   order: number
   category: InfoCategory
   title: string
-  link: string | null
+  map_url: string | null
   note: string | null
   is_checked: boolean
 }
@@ -94,7 +94,7 @@ export interface TravelExportPayload {
   version: number
   travel: { title: string; date_start: string | null; date_end: string | null }
   itinerary: Array<{ date: string; time: string | null; title: string; location: string | null; map_url: string | null; note: string | null }>
-  documents: Array<{ category: string; title: string; date_start: string | null; date_end: string | null; link: string | null; note: string | null }>
-  info: Array<{ category: string; title: string; link: string | null; note: string | null; is_checked: boolean }>
+  documents: Array<{ category: string; title: string; date_start: string | null; date_end: string | null; map_url: string | null; note: string | null }>
+  info: Array<{ category: string; title: string; map_url: string | null; note: string | null; is_checked: boolean }>
   checklist: Array<{ category: string | null; title: string; note: string | null; is_checked: boolean }>
 }

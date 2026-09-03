@@ -23,10 +23,10 @@ export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (c
         `SELECT date, time, title, location, map_url, note FROM itinerary WHERE travel_id = ? ORDER BY date ASC, "order" ASC`,
       ).bind(travelId).all(),
       DB.prepare(
-        `SELECT category, title, date_start, date_end, link, note FROM documents WHERE travel_id = ? ORDER BY "order" ASC`,
+        `SELECT category, title, date_start, date_end, map_url, note FROM documents WHERE travel_id = ? ORDER BY "order" ASC`,
       ).bind(travelId).all(),
       DB.prepare(
-        `SELECT category, title, link, note, is_checked FROM info WHERE travel_id = ? ORDER BY "order" ASC`,
+        `SELECT category, title, map_url, note, is_checked FROM info WHERE travel_id = ? ORDER BY "order" ASC`,
       ).bind(travelId).all(),
       DB.prepare(
         `SELECT category, title, note, is_checked FROM checklist WHERE travel_id = ? ORDER BY "order" ASC`,

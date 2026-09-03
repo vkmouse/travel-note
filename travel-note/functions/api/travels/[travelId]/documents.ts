@@ -11,18 +11,18 @@ export const onRequestGet: PagesFunction<Env, any, TravelAuthContext> = async (c
     // 存取權已在 middleware 檢查過，這裡不再用 user_id 縮小範圍，讓共享者互相看得到彼此的項目
     const stmt = category === '票券'
       ? DB.prepare(
-          `SELECT id, "order", category, title, date_start, date_end, link, note
+          `SELECT id, "order", category, title, date_start, date_end, map_url, note
            FROM documents WHERE travel_id = ? AND category IN (?, ?, ?)
            ORDER BY "order" ASC`,
         ).bind(travelId, '票券', 'KKday', 'Klook')
       : category
         ? DB.prepare(
-            `SELECT id, "order", category, title, date_start, date_end, link, note
+            `SELECT id, "order", category, title, date_start, date_end, map_url, note
              FROM documents WHERE travel_id = ? AND category = ?
              ORDER BY "order" ASC`,
           ).bind(travelId, category)
       : DB.prepare(
-          `SELECT id, "order", category, title, date_start, date_end, link, note
+          `SELECT id, "order", category, title, date_start, date_end, map_url, note
            FROM documents WHERE travel_id = ?
            ORDER BY "order" ASC`,
         ).bind(travelId)
@@ -48,7 +48,7 @@ export const onRequestPost: PagesFunction<Env, any, TravelAuthContext> = async (
 
     const date_start = String(body.date_start ?? '')
     const date_end = String(body.date_end ?? '')
-    const link = String(body.link ?? '')
+    const map_url = String(body.map_url ?? '')
     const note = String(body.note ?? '')
 
     const { results } = await DB.prepare(
@@ -58,13 +58,13 @@ export const onRequestPost: PagesFunction<Env, any, TravelAuthContext> = async (
 
     const id = `doc_${crypto.randomUUID().slice(0, 8)}`
     await DB.prepare(
-      `INSERT INTO documents (id, travel_id, user_id, "order", category, title, date_start, date_end, link, note)
+      `INSERT INTO documents (id, travel_id, user_id, "order", category, title, date_start, date_end, map_url, note)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
-      .bind(id, travelId, userId, order, category, title, date_start, date_end, link, note)
+      .bind(id, travelId, userId, order, category, title, date_start, date_end, map_url, note)
       .run()
 
-    return jsonOk({ id, order, category, title, date_start, date_end, link, note })
+    return jsonOk({ id, order, category, title, date_start, date_end, map_url, note })
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'create failed', 500)
   }

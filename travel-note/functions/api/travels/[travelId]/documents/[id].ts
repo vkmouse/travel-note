@@ -21,16 +21,16 @@ export const onRequestPut: PagesFunction<Env, any, TravelAuthContext> = async (c
 
     const date_start = String(body.date_start ?? existing.date_start ?? '')
     const date_end = String(body.date_end ?? existing.date_end ?? '')
-    const link = String(body.link ?? existing.link ?? '')
+    const map_url = String(body.map_url ?? existing.map_url ?? '')
     const note = String(body.note ?? existing.note ?? '')
 
     await DB.prepare(
-      `UPDATE documents SET category = ?, title = ?, date_start = ?, date_end = ?, link = ?, note = ? WHERE id = ? AND travel_id = ?`,
+      `UPDATE documents SET category = ?, title = ?, date_start = ?, date_end = ?, map_url = ?, note = ? WHERE id = ? AND travel_id = ?`,
     )
-      .bind(category, title, date_start, date_end, link, note, id, travelId)
+      .bind(category, title, date_start, date_end, map_url, note, id, travelId)
       .run()
 
-    return jsonOk({ id, order: existing.order, category, title, date_start, date_end, link, note })
+    return jsonOk({ id, order: existing.order, category, title, date_start, date_end, map_url, note })
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'update failed', 500)
   }

@@ -19,11 +19,11 @@ export const onRequestPut: PagesFunction<Env, any, TravelAuthContext> = async (c
     if (!category || !title) return jsonError('category 與 title 為必填', 400)
     if (!isValidCategory(category, INFO_CATEGORIES)) return jsonError(`category 必須是：${INFO_CATEGORIES.join('、')}`, 400)
 
-    const link = String(body.link ?? existing.link ?? '')
+    const map_url = String(body.map_url ?? existing.map_url ?? '')
     const note = String(body.note ?? existing.note ?? '')
 
-    await DB.prepare(`UPDATE info SET category = ?, title = ?, link = ?, note = ? WHERE id = ? AND travel_id = ?`)
-      .bind(category, title, link, note, id, travelId)
+    await DB.prepare(`UPDATE info SET category = ?, title = ?, map_url = ?, note = ? WHERE id = ? AND travel_id = ?`)
+      .bind(category, title, map_url, note, id, travelId)
       .run()
 
     return jsonOk({
@@ -31,7 +31,7 @@ export const onRequestPut: PagesFunction<Env, any, TravelAuthContext> = async (c
       order: existing.order,
       category,
       title,
-      link,
+      map_url,
       note,
       is_checked: Boolean(existing.is_checked),
     })
@@ -60,7 +60,7 @@ export const onRequestPatch: PagesFunction<Env, any, TravelAuthContext> = async 
       order: existing.order,
       category: existing.category,
       title: existing.title,
-      link: existing.link,
+      map_url: existing.map_url,
       note: existing.note,
       is_checked: body.is_checked,
     })

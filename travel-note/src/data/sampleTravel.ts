@@ -30,21 +30,21 @@ const SAMPLE_ITINERARY = [
 ]
 
 const SAMPLE_DOCUMENTS = [
-  { category: '住宿', title: '東京喜來登飯店', date_start: '2026-10-05', date_end: '2026-10-08', link: 'https://booking.com/xxx', note: '訂單號 `BK123456`，Check-in **15:00**' },
-  { category: '機票', title: '長榮 BR198 台北→東京', date_start: '2026-10-05', date_end: '', link: '', note: '去程 08:00起飛，訂位代號 `ABC123`' },
-  { category: '簽證', title: '日本短期簽證', date_start: '', date_end: '', link: '', note: '*免簽*，護照效期需**6個月以上**' },
-  { category: '票券', title: '澀谷Sky展望台門票', date_start: '2026-10-06', date_end: '', link: 'https://kkday.com/xxx', note: '憑 `QR code` 入場，19:00場次' },
-  { category: '火車', title: '新幹線 東京→京都', date_start: '2026-10-07', date_end: '', link: '', note: '08:30發車，指定席 **車廂8 座位5A**' },
-  { category: '交通', title: 'JR PASS 7日券', date_start: '2026-10-05', date_end: '2026-10-11', link: '', note: '成田機場領取，適用範圍：\n- JR 在來線\n- 新幹線（不含のぞみ/みずほ）\n- JR巴士部分路線' },
+  { category: '住宿', title: '東京喜來登飯店', date_start: '2026-10-05', date_end: '2026-10-08', map_url: 'https://booking.com/xxx', note: '訂單號 `BK123456`，Check-in **15:00**' },
+  { category: '機票', title: '長榮 BR198 台北→東京', date_start: '2026-10-05', date_end: '', map_url: '', note: '去程 08:00起飛，訂位代號 `ABC123`' },
+  { category: '簽證', title: '日本短期簽證', date_start: '', date_end: '', map_url: '', note: '*免簽*，護照效期需**6個月以上**' },
+  { category: '票券', title: '澀谷Sky展望台門票', date_start: '2026-10-06', date_end: '', map_url: 'https://kkday.com/xxx', note: '憑 `QR code` 入場，19:00場次' },
+  { category: '火車', title: '新幹線 東京→京都', date_start: '2026-10-07', date_end: '', map_url: '', note: '08:30發車，指定席 **車廂8 座位5A**' },
+  { category: '交通', title: 'JR PASS 7日券', date_start: '2026-10-05', date_end: '2026-10-11', map_url: '', note: '成田機場領取，適用範圍：\n- JR 在來線\n- 新幹線（不含のぞみ/みずほ）\n- JR巴士部分路線' },
 ]
 
 const SAMPLE_INFO = [
-  { category: '工具', title: '日圓匯率換算', link: 'https://www.xe.com', note: '', is_checked: false },
-  { category: '工具', title: 'Google翻譯離線包', link: '', note: '出發前記得下載日文離線包：\n1. 開啟App\n2. 設定 > 離線翻譯\n3. 下載日文包', is_checked: true },
-  { category: '靈感', title: '小紅書推薦的原宿咖啡廳', link: 'https://xhslink.com/xxx', note: '朋友說**必吃鬆餅**', is_checked: false },
-  { category: '靈感', title: 'IG看到的今治毛巾專賣店', link: 'https://instagram.com/xxx', note: '銀座店', is_checked: false },
-  { category: '緊急聯絡', title: '駐日台北經濟文化代表處', link: '', note: '電話：`03-3280-7811`，地址：東京都港區白金台5-20-2', is_checked: false },
-  { category: '緊急聯絡', title: '海外突發傷病險 24hr專線', link: '', note: '電話：**0800-xxx-xxx**（24小時）', is_checked: false },
+  { category: '工具', title: '日圓匯率換算', map_url: 'https://www.xe.com', note: '', is_checked: false },
+  { category: '工具', title: 'Google翻譯離線包', map_url: '', note: '出發前記得下載日文離線包：\n1. 開啟App\n2. 設定 > 離線翻譯\n3. 下載日文包', is_checked: true },
+  { category: '靈感', title: '小紅書推薦的原宿咖啡廳', map_url: 'https://xhslink.com/xxx', note: '朋友說**必吃鬆餅**', is_checked: false },
+  { category: '靈感', title: 'IG看到的今治毛巾專賣店', map_url: 'https://instagram.com/xxx', note: '銀座店', is_checked: false },
+  { category: '緊急聯絡', title: '駐日台北經濟文化代表處', map_url: '', note: '電話：`03-3280-7811`，地址：東京都港區白金台5-20-2', is_checked: false },
+  { category: '緊急聯絡', title: '海外突發傷病險 24hr專線', map_url: '', note: '電話：**0800-xxx-xxx**（24小時）', is_checked: false },
 ]
 
 const SAMPLE_CHECKLIST = [

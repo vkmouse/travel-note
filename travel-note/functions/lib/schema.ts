@@ -34,7 +34,7 @@ export const CREATE_TABLE_STATEMENTS = [
     title TEXT NOT NULL,
     date_start TEXT,
     date_end TEXT,
-    link TEXT,
+    map_url TEXT,
     note TEXT
   )`,
   `CREATE TABLE IF NOT EXISTS info (
@@ -44,7 +44,7 @@ export const CREATE_TABLE_STATEMENTS = [
     "order" INTEGER NOT NULL,
     category TEXT NOT NULL,
     title TEXT NOT NULL,
-    link TEXT,
+    map_url TEXT,
     note TEXT,
     is_checked INTEGER NOT NULL DEFAULT 0
   )`,

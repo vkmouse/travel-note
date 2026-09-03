@@ -21,7 +21,7 @@ const fields: DrawerField[] = [
   { key: 'title', label: '名稱', type: 'text', required: true, placeholder: '輸入文件名稱' },
   { key: 'date_start', label: '開始日期', type: 'date', placeholder: '開始日期' },
   { key: 'date_end', label: '結束日期', type: 'date', placeholder: '結束日期' },
-  { key: 'link', label: '連結', type: 'url' }, { key: 'note', label: '備註', type: 'textarea', hint: '支援 markdown：**粗體**、*斜體*、`代碼`、- 清單、[文字](網址)。連結目標打成 [緊急聯絡](常用資訊/緊急聯絡) 這種路徑，就會變成能直接點過去的內部連結' },
+  { key: 'map_url', label: '連結', type: 'url', placeholder: 'Google Maps 短網址' }, { key: 'note', label: '備註', type: 'textarea', hint: '支援 markdown：**粗體**、*斜體*、`代碼`、- 清單、[文字](網址)。連結目標打成 [緊急聯絡](常用資訊/緊急聯絡) 這種路徑，就會變成能直接點過去的內部連結' },
 ]
 const formValues = computed(() => items.value.find((i) => i.id === editingId.value) ?? { category: fields[0]?.options?.[0] })
 
@@ -72,7 +72,7 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
             </div>
             <div v-if="dateRange(doc)" class="ticket-dates">{{ dateRange(doc) }}</div>
             <div v-if="doc.note" class="ticket-note"><NoteText :text="doc.note" /></div>
-            <a v-if="doc.link" class="ticket-link" :href="doc.link" target="_blank" rel="noopener">
+            <a v-if="doc.map_url" class="ticket-link" :href="doc.map_url" target="_blank" rel="noopener">
               <Icon name="link" :size="13" />
               開啟連結
             </a>
