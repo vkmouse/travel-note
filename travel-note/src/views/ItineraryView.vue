@@ -71,13 +71,16 @@ const dayItems = computed(() =>
 const routableItems = computed(() => dayItems.value.filter((it) => it.map_url))
 const planningRoute = ref(false)
 const selectedRouteIds = ref<Set<string>>(new Set())
+const allRoutableSelected = computed(
+  () => routableItems.value.length > 0 && routableItems.value.every((it) => selectedRouteIds.value.has(it.id)),
+)
 
 function startPlanning() {
   selectedRouteIds.value = new Set(routableItems.value.map((it) => it.id))
   planningRoute.value = true
 }
-function selectAllRoute() {
-  selectedRouteIds.value = new Set(routableItems.value.map((it) => it.id))
+function toggleSelectAllRoute() {
+  selectedRouteIds.value = allRoutableSelected.value ? new Set() : new Set(routableItems.value.map((it) => it.id))
 }
 function toggleRouteItem(id: string) {
   const next = new Set(selectedRouteIds.value)
@@ -138,9 +141,10 @@ function dayNum(d: string) {
           規劃路線
         </button>
         <template v-else>
-          <button class="route-tool-btn" type="button" @click="selectAllRoute">
+          <p class="route-hint">點選卡片加入路線</p>
+          <button class="route-tool-btn" type="button" @click="toggleSelectAllRoute">
             <Icon name="selectall" :size="14" />
-            全選
+            {{ allRoutableSelected ? '取消全選' : '全選' }}
           </button>
           <a v-if="routeUrl" class="route-link" :href="routeUrl" target="_blank" rel="noopener" @click="closePlanning">
             <Icon name="compass" :size="14" />
@@ -161,9 +165,23 @@ function dayNum(d: string) {
           </div>
           <div style="flex: 1">
             <div class="tl-time">{{ it.time || '整天' }}</div>
-            <div class="tl-card">
+            <div
+              class="tl-card"
+              :class="{
+                'tl-card--select-mode': planningRoute && it.map_url,
+                'tl-card--selected': planningRoute && it.map_url && selectedRouteIds.has(it.id),
+              }"
+              @click="planningRoute && it.map_url && toggleRouteItem(it.id)"
+            >
               <div class="tl-card-head">
-              <div class="tl-card-head"><p class="tl-title">{{ it.title }}</p><div class="card-actions"><button class="icon-btn" aria-label="編輯" @click="openEdit(it.id)"><Icon name="edit" :size="17" /></button><button class="icon-btn danger" aria-label="刪除" @click="openDelete(it.id)"><Icon name="trash" :size="17" /></button></div></div>
+                <p class="tl-title">{{ it.title }}</p>
+                <div v-if="!(planningRoute && it.map_url)" class="card-actions">
+                  <button class="icon-btn" aria-label="編輯" @click="openEdit(it.id)"><Icon name="edit" :size="17" /></button>
+                  <button class="icon-btn danger" aria-label="刪除" @click="openDelete(it.id)"><Icon name="trash" :size="17" /></button>
+                </div>
+                <div v-else class="route-select-badge" :class="{ 'route-select-badge--on': selectedRouteIds.has(it.id) }">
+                  <Icon name="check" :size="14" />
+                </div>
               </div>
               <p v-if="it.location" class="tl-loc">
                 <Icon name="pin" :size="13" />
@@ -174,10 +192,6 @@ function dayNum(d: string) {
                 <Icon name="compass" :size="13" />
                 查看地圖
               </a>
-              <label v-else-if="it.map_url && planningRoute" class="map-route-check">
-                <input type="checkbox" :checked="selectedRouteIds.has(it.id)" @change="toggleRouteItem(it.id)" />
-                帶入路線
-              </label>
             </div>
           </div>
         </div>
@@ -291,6 +305,19 @@ function dayNum(d: string) {
   border-radius: var(--r-md);
   padding: 12px 10px 12px 14px;
   flex: 1;
+  transition: background-color .15s, border-color .15s, box-shadow .15s;
+}
+.tl-card--select-mode {
+  cursor: pointer;
+  user-select: none;
+}
+.tl-card--select-mode:active {
+  background: rgba(169, 121, 44, 0.06);
+}
+.tl-card--selected {
+  border-color: var(--brass);
+  background: rgba(169, 121, 44, 0.08);
+  box-shadow: var(--shadow-raised);
 }
 .tl-card-head {
   display: flex;
@@ -328,21 +355,23 @@ function dayNum(d: string) {
   color: var(--slate);
   text-decoration: none;
 }
-.map-route-check {
-  display: inline-flex;
+.route-select-badge {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--paper);
+  display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 9px;
-  padding: 6px 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--brass);
-  cursor: pointer;
+  justify-content: center;
+  color: transparent;
+  transition: background-color .15s, border-color .15s, color .15s;
 }
-.map-route-check input {
-  width: 15px;
-  height: 15px;
-  accent-color: var(--brass);
+.route-select-badge--on {
+  background: var(--brass);
+  border-color: var(--brass);
+  color: #fff;
 }
 .route-toolbar-row {
   display: flex;
@@ -350,6 +379,12 @@ function dayNum(d: string) {
   align-items: center;
   gap: 8px;
   margin-bottom: 14px;
+}
+.route-hint {
+  margin: 0;
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--muted);
 }
 .route-toggle-btn,
 .route-tool-btn {
