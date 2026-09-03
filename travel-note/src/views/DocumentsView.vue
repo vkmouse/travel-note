@@ -98,15 +98,22 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
               </div>
             </div>
             <div v-if="dateRange(doc)" class="ticket-dates">{{ dateRange(doc) }}</div>
-            <p v-if="placeNameOf(doc.map_url)" class="ticket-loc">
+            <a
+              v-if="doc.map_url && !planningRoute"
+              class="ticket-loc ticket-loc--link"
+              :href="doc.map_url"
+              target="_blank"
+              rel="noopener"
+              @click.stop
+            >
+              <Icon name="pin" :size="13" />
+              {{ placeNameOf(doc.map_url) || '開啟連結' }}
+            </a>
+            <p v-else-if="placeNameOf(doc.map_url)" class="ticket-loc">
               <Icon name="pin" :size="13" />
               {{ placeNameOf(doc.map_url) }}
             </p>
             <div v-if="doc.note" class="ticket-note"><NoteText :text="doc.note" /></div>
-            <a v-if="doc.map_url && !planningRoute" class="ticket-link" :href="doc.map_url" target="_blank" rel="noopener">
-              <Icon name="link" :size="13" />
-              開啟連結
-            </a>
           </div>
         </div>
       </div>
@@ -217,20 +224,17 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
   align-items: center;
   gap: 5px;
 }
+.ticket-loc--link {
+  color: var(--slate);
+  font-weight: 600;
+  text-decoration: none;
+}
+.ticket-loc--link:hover {
+  text-decoration: underline;
+}
 .ticket-note {
   font-size: 12.5px;
   color: var(--muted);
-}
-.ticket-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 8px;
-  padding: 6px 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--slate);
-  text-decoration: none;
 }
 .route-select-badge {
   width: 26px;

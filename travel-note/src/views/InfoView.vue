@@ -82,15 +82,22 @@ const selectableIds = computed(() => filtered.value.filter((i) => i.map_url).map
             </div>
             <div class="info-body">
               <p class="info-title" :class="{ done: item.is_checked }">{{ item.title }}</p>
-              <p v-if="placeNameOf(item.map_url)" class="info-loc">
+              <a
+                v-if="item.map_url && !planningRoute"
+                class="info-loc info-loc--link"
+                :href="item.map_url"
+                target="_blank"
+                rel="noopener"
+                @click.stop
+              >
+                <Icon name="pin" :size="13" />
+                {{ placeNameOf(item.map_url) || '開啟連結' }}
+              </a>
+              <p v-else-if="placeNameOf(item.map_url)" class="info-loc">
                 <Icon name="pin" :size="13" />
                 {{ placeNameOf(item.map_url) }}
               </p>
               <div v-if="item.note" class="info-note"><NoteText :text="item.note" /></div>
-              <a v-if="item.map_url && !planningRoute" class="info-link" :href="item.map_url" target="_blank" rel="noopener">
-                <Icon name="link" :size="13" />
-                開啟連結
-              </a>
             </div>
             <div v-if="!(planningRoute && item.map_url)" class="card-actions">
               <button class="icon-btn" aria-label="編輯" @click.stop="openEdit(item.id)"><Icon name="edit" :size="17" /></button>
@@ -130,17 +137,6 @@ const selectableIds = computed(() => filtered.value.filter((i) => i.map_url).map
 .info-row--route-disabled {
   filter: grayscale(0.5);
   opacity: 0.55;
-}
-.info-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-top: 6px;
-  padding: 6px 0;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--slate);
-  text-decoration: none;
 }
 .route-select-badge {
   width: 26px;

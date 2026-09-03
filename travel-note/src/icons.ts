@@ -28,6 +28,8 @@ export const ICONS: Record<string, string> = {
     '<rect x="2.5" y="5.5" width="19" height="13" rx="2"/><circle cx="8.3" cy="12" r="2"/><path d="M6 15.8c.5-1.3 1.5-2.1 2.3-2.1s1.8.8 2.3 2.1M14.5 9.5h5M14.5 12.5h5M14.5 15.5h3"/>',
   plug: '<path d="M9 2v5M15 2v5M7.5 7h9v3a4.5 4.5 0 0 1-9 0z"/><path d="M12 14v4M9 21h6"/>',
   pill: '<path d="M4.7 14.8l5.6-5.6a4.1 4.1 0 1 1 5.8 5.8l-5.6 5.6a4.1 4.1 0 0 1-5.8-5.8z"/><path d="M8.7 8.7l6.6 6.6"/>',
+  restaurant:
+    '<path d="M6 3v6a2.5 2.5 0 0 0 5 0V3"/><path d="M8.5 9v12"/><path d="M16.5 3c1.6 .6 1.6 7.4 0 8"/><path d="M16.5 3v18"/>',
   suitcase: '<rect x="3" y="7" width="18" height="13" rx="2.2"/><path d="M8.5 7V5.3A1.8 1.8 0 0 1 10.3 3.5h3.4A1.8 1.8 0 0 1 15.5 5.3V7"/><path d="M3 12.5h18"/>',
   users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 8.3a3 3 0 0 1 0 5.9"/><path d="M18.5 14.6c2.3.6 3.5 2.4 3.5 5.4"/>',
   mail: '<rect x="3" y="5.5" width="18" height="13" rx="2.2"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5"/>',
@@ -58,6 +60,7 @@ export const CATEGORY_ICON: Record<string, string> = {
   機票: 'send',
   交通: 'bus',
   票券: 'ticket',
+  餐廳: 'restaurant',
   火車: 'train',
   簽證: 'passport',
   其他: 'tag',

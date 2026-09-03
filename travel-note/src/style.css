@@ -405,6 +405,14 @@ textarea.f-input {
   align-items: center;
   gap: 5px;
 }
+.info-loc--link {
+  color: var(--slate);
+  font-weight: 600;
+  text-decoration: none;
+}
+.info-loc--link:hover {
+  text-decoration: underline;
+}
 .info-note {
   font-size: 12.5px;
   color: var(--muted);
