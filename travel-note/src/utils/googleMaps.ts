@@ -42,6 +42,5 @@ export function buildDirectionsUrl(places: string[]): string {
     `destination=${encodeURIComponent(places[places.length - 1]!)}`,
   ]
   if (places.length > 2) params.push(`waypoints=${encodeURIComponent(places.slice(1, -1).join('|'))}`)
-  params.push('travelmode=driving')
   return `https://www.google.com/maps/dir/?${params.join('&')}`
 }
