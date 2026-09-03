@@ -6,9 +6,9 @@ import { useRoutePlanning } from '../composables/useRoutePlanning'
 
 // allowEntry：這頁能不能「發起」規劃（行前清單沒有 map_url，不能發起，
 // 但若已經在別頁開始規劃，切過來這裡還是要看得到工具列以便結束/開啟路線）
-// page：對應 routableItems 的 id 前綴（itinerary/documents/info/checklist），
-// 「全選」只作用在目前這頁的項目，不動到其他頁已經勾選的
-const props = defineProps<{ allowEntry: boolean; page?: 'itinerary' | 'documents' | 'info' | 'checklist' }>()
+// selectableIds：呼叫端當下「看得到」的那批可選 id（行程頁是這一天、文件/資訊頁是這個分類），
+// 「全選」只作用在這批 id 上，不會動到其他天／其他分類已經勾選的項目
+const props = defineProps<{ allowEntry: boolean; selectableIds?: string[] }>()
 const emit = defineEmits<{ add: [] }>()
 
 const { currentTravelId } = useCurrentTravel()
@@ -18,16 +18,15 @@ const {
   selectedCount,
   routeUrl,
   startPlanning,
-  pageRoutableItems,
-  isPageFullySelected,
-  toggleSelectAllOnPage,
+  isSelected,
+  toggleSelectAllForIds,
   closePlanning,
 } = useRoutePlanning(currentTravelId)
 
-const pageItemCount = computed(() => (props.page ? pageRoutableItems(props.page).length : 0))
-const pageAllSelected = computed(() => (props.page ? isPageFullySelected(props.page) : false))
+const scopedIds = computed(() => props.selectableIds ?? [])
+const scopedAllSelected = computed(() => scopedIds.value.length > 0 && scopedIds.value.every((id) => isSelected(id)))
 function handleSelectAll() {
-  if (props.page) toggleSelectAllOnPage(props.page)
+  toggleSelectAllForIds(scopedIds.value)
 }
 </script>
 
@@ -51,9 +50,9 @@ function handleSelectAll() {
     <button
       class="route-fab-btn"
       type="button"
-      :class="{ 'route-fab-btn--disabled': pageItemCount === 0 }"
-      :disabled="pageItemCount === 0"
-      :aria-label="pageAllSelected ? '取消全選（本頁）' : '全選本頁'"
+      :class="{ 'route-fab-btn--disabled': scopedIds.length === 0 }"
+      :disabled="scopedIds.length === 0"
+      :aria-label="scopedAllSelected ? '取消全選（目前清單）' : '全選目前清單'"
       @click="handleSelectAll"
     >
       <Icon name="selectall" :size="17" />

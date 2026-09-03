@@ -57,23 +57,17 @@ export function useRoutePlanning(travelId: Ref<string | null>) {
     selectionOrder.value = []
     planningRoute.value = true
   }
-  // 「全選」只作用在目前頁面（page 對應 routableItems 的 id 前綴），
-  // 不影響其他頁已經勾選的項目
-  function pageRoutableItems(page: string) {
-    return routableItems.value.filter((it) => it.id.startsWith(`${page}:`))
-  }
-  function isPageFullySelected(page: string) {
-    const items = pageRoutableItems(page)
-    return items.length > 0 && items.every((it) => selectedIdSet.value.has(it.id))
-  }
-  function toggleSelectAllOnPage(page: string) {
-    const items = pageRoutableItems(page)
-    if (items.length === 0) return
-    if (isPageFullySelected(page)) {
-      const ids = new Set(items.map((it) => it.id))
-      selectionOrder.value = selectionOrder.value.filter((id) => !ids.has(id))
+  // 「全選」只作用在呼叫端傳進來、當下實際看得到的那批 id
+  // （例如行程頁的「這一天」、文件／資訊頁的「這個分類」），
+  // 不是整頁全部、也不影響其他天／其他分類已經勾選的項目
+  function toggleSelectAllForIds(ids: string[]) {
+    if (ids.length === 0) return
+    const allOn = ids.every((id) => selectedIdSet.value.has(id))
+    if (allOn) {
+      const idSet = new Set(ids)
+      selectionOrder.value = selectionOrder.value.filter((id) => !idSet.has(id))
     } else {
-      const toAdd = items.map((it) => it.id).filter((id) => !selectedIdSet.value.has(id))
+      const toAdd = ids.filter((id) => !selectedIdSet.value.has(id))
       selectionOrder.value = [...selectionOrder.value, ...toAdd]
     }
   }
@@ -105,9 +99,7 @@ export function useRoutePlanning(travelId: Ref<string | null>) {
     selectionNumber,
     toggle,
     startPlanning,
-    pageRoutableItems,
-    isPageFullySelected,
-    toggleSelectAllOnPage,
+    toggleSelectAllForIds,
     closePlanning,
   }
 }

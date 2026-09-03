@@ -29,6 +29,9 @@ async function toggle(item: (typeof items.value)[number]) { if (!currentTravelId
 
 const sortedItems = computed(() => [...items.value].sort((a, b) => a.order - b.order))
 const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sortedItems, (i) => i.category)
+
+// 「全選」的範圍：只有目前這個分類（含「全部」時就是整頁）、且有連結的項目
+const selectableIds = computed(() => filtered.value.filter((i) => i.map_url).map((i) => routeId(i.id)))
 </script>
 
 <template>
@@ -63,6 +66,7 @@ const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sort
             :class="{
               'info-row--select-mode': planningRoute && item.map_url,
               'info-row--selected': planningRoute && item.map_url && isSelected(routeId(item.id)),
+              'info-row--route-disabled': planningRoute && !item.map_url,
             }"
             @click="planningRoute && item.map_url && toggleRoute(routeId(item.id))"
           >
@@ -94,7 +98,7 @@ const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sort
         <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
       </div>
     </template>
-    <RoutePlanningBar :allow-entry="true" page="info" @add="openCreate" />
+    <RoutePlanningBar :allow-entry="true" :selectable-ids="selectableIds" @add="openCreate" />
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
     <DrawerForm :open="formOpen" :title="`${editingId ? '編輯' : '新增'}．常用資訊`" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
@@ -116,6 +120,10 @@ const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sort
   border-color: var(--brass);
   background: rgba(169, 121, 44, 0.08);
   box-shadow: var(--shadow-raised);
+}
+.info-row--route-disabled {
+  filter: grayscale(0.5);
+  opacity: 0.55;
 }
 .info-link {
   display: inline-flex;

@@ -69,6 +69,9 @@ const dayItems = computed(() =>
     : [],
 )
 
+// 「全選」的範圍：只有目前這一天、且有地圖連結的項目
+const selectableIds = computed(() => dayItems.value.filter((it) => it.map_url).map((it) => routeId(it.id)))
+
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 function weekday(d: string) {
   return '週' + WEEKDAYS[new Date(d).getDay()]
@@ -111,6 +114,7 @@ function dayNum(d: string) {
               :class="{
                 'tl-card--select-mode': planningRoute && it.map_url,
                 'tl-card--selected': planningRoute && it.map_url && isSelected(routeId(it.id)),
+                'tl-card--route-disabled': planningRoute && !it.map_url,
               }"
               @click="planningRoute && it.map_url && toggleRoute(routeId(it.id))"
             >
@@ -142,7 +146,7 @@ function dayNum(d: string) {
         <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
       </div>
     </template>
-    <RoutePlanningBar :allow-entry="true" page="itinerary" @add="openCreate" />
+    <RoutePlanningBar :allow-entry="true" :selectable-ids="selectableIds" @add="openCreate" />
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
     <DrawerForm :open="formOpen" title="行程" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
@@ -259,6 +263,12 @@ function dayNum(d: string) {
   border-color: var(--brass);
   background: rgba(169, 121, 44, 0.08);
   box-shadow: var(--shadow-raised);
+}
+.tl-card--route-disabled {
+  background: var(--paper-dark);
+  border-color: var(--paper-dark);
+  filter: grayscale(0.5);
+  opacity: 0.55;
 }
 .tl-card-head {
   display: flex;

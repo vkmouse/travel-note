@@ -32,6 +32,9 @@ const formValues = computed(() => items.value.find((i) => i.id === editingId.val
 const sortedItems = computed(() => [...items.value].sort((a, b) => a.order - b.order))
 const { categories, activeCategory, filtered } = useCategoryFilter(sortedItems, (d) => d.category)
 
+// 「全選」的範圍：只有目前這個分類（含「全部」時就是整頁）、且有連結的項目
+const selectableIds = computed(() => filtered.value.filter((d) => d.map_url).map((d) => routeId(d.id)))
+
 function fmtDate(d: string | null) {
   if (!d) return ''
   const parts = d.split('-')
@@ -70,6 +73,7 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
           :class="{
             'ticket--select-mode': planningRoute && doc.map_url,
             'ticket--selected': planningRoute && doc.map_url && isSelected(routeId(doc.id)),
+            'ticket--route-disabled': planningRoute && !doc.map_url,
           }"
           @click="planningRoute && doc.map_url && toggleRoute(routeId(doc.id))"
         >
@@ -105,7 +109,7 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
         <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
       </div>
     </template>
-    <RoutePlanningBar :allow-entry="true" page="documents" @add="openCreate" />
+    <RoutePlanningBar :allow-entry="true" :selectable-ids="selectableIds" @add="openCreate" />
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
     <DrawerForm :open="formOpen" :title="`${editingId ? '編輯' : '新增'}．旅行文件`" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
@@ -133,6 +137,11 @@ function dateRange(doc: { date_start: string | null; date_end: string | null }) 
   border-color: var(--brass);
   background: rgba(169, 121, 44, 0.08);
   box-shadow: var(--shadow-raised);
+}
+.ticket--route-disabled {
+  border-color: var(--paper-dark);
+  filter: grayscale(0.5);
+  opacity: 0.55;
 }
 .ticket-icon {
   width: 50px;
