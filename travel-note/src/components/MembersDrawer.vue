@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Icon from './Icon.vue'
 import DrawerConfirm from './DrawerConfirm.vue'
 import { fetchTravelMembers, inviteMember, declineInvitation } from '../services/api'
@@ -103,10 +103,11 @@ async function confirmRemove() {
 }
 
 const sheetRef = ref<HTMLElement | null>(null)
-const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('close'))
+const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('close'), computed(() => props.open))
 </script>
 
 <template>
+  <Transition name="sheet">
   <div v-if="open" class="drawer-overlay" @click.self="emit('close')">
     <section
       ref="sheetRef"
@@ -195,6 +196,7 @@ const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(
       @confirm="confirmRemove"
     />
   </div>
+  </Transition>
 </template>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { importTravel } from '../services/api'
 import { useSheetDrag } from '../composables/useSheetDrag'
 
@@ -69,55 +69,57 @@ async function doImport(payload: unknown) {
 }
 
 const sheetRef = ref<HTMLElement | null>(null)
-const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('close'))
+const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('close'), computed(() => props.open))
 </script>
 
 <template>
-  <div v-if="open" class="drawer-overlay" @click.self="emit('close')">
-    <section
-      ref="sheetRef"
-      class="drawer-sheet"
-      role="dialog"
-      aria-modal="true"
-      :aria-label="mode === 'replace' ? '匯入取代這趟旅行' : '匯入旅行'"
-      :style="dragging ? { transform: `translateY(${dragY}px)`, transition: 'none' } : {}"
-    >
-      <div class="drawer-top" @touchstart="onTouchStart" @touchmove.prevent="onTouchMove" @touchend="onTouchEnd"><div class="drawer-handle"></div></div>
+  <Transition name="sheet">
+    <div v-if="open" class="drawer-overlay" @click.self="emit('close')">
+      <section
+        ref="sheetRef"
+        class="drawer-sheet"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="mode === 'replace' ? '匯入取代這趟旅行' : '匯入旅行'"
+        :style="dragging ? { transform: `translateY(${dragY}px)`, transition: 'none' } : {}"
+      >
+        <div class="drawer-top" @touchstart="onTouchStart" @touchmove.prevent="onTouchMove" @touchend="onTouchEnd"><div class="drawer-handle"></div></div>
 
-      <template v-if="!confirming">
-        <div class="drawer-body">
-          <h3 class="drawer-title">{{ mode === 'replace' ? `匯入取代「${travelTitle}」` : '匯入旅行' }}</h3>
-          <p class="hint">
-            {{
-              mode === 'replace'
-                ? '把匯出的文字貼在下面，下一步會請你再次確認：這會把目前這趟旅行的所有內容換成貼上的內容，且無法復原。'
-                : '把朋友分享給你的匯出文字貼在下面，會建立成一趟全新的旅行，你會是這趟旅行的擁有者。'
-            }}
-          </p>
-          <textarea v-model="text" class="import-text" rows="10" placeholder="貼上匯出的文字…"></textarea>
-          <p v-if="error" class="drawer-error">{{ error }}</p>
-        </div>
-        <div class="drawer-actions">
-          <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">取消</button>
-          <button class="btn-primary" type="button" :disabled="busy" @click="submit">
-            {{ mode === 'replace' ? '下一步' : (busy ? '建立中…' : '建立旅行') }}
-          </button>
-        </div>
-      </template>
+        <template v-if="!confirming">
+          <div class="drawer-body">
+            <h3 class="drawer-title">{{ mode === 'replace' ? `匯入取代「${travelTitle}」` : '匯入旅行' }}</h3>
+            <p class="hint">
+              {{
+                mode === 'replace'
+                  ? '把匯出的文字貼在下面，下一步會請你再次確認：這會把目前這趟旅行的所有內容換成貼上的內容，且無法復原。'
+                  : '把朋友分享給你的匯出文字貼在下面，會建立成一趟全新的旅行，你會是這趟旅行的擁有者。'
+              }}
+            </p>
+            <textarea v-model="text" class="import-text" rows="10" placeholder="貼上匯出的文字…"></textarea>
+            <p v-if="error" class="drawer-error">{{ error }}</p>
+          </div>
+          <div class="drawer-actions">
+            <button class="btn-secondary" type="button" :disabled="busy" @click="emit('close')">取消</button>
+            <button class="btn-primary" type="button" :disabled="busy" @click="submit">
+              {{ mode === 'replace' ? '下一步' : (busy ? '建立中…' : '建立旅行') }}
+            </button>
+          </div>
+        </template>
 
-      <template v-else>
-        <div class="drawer-body drawer-confirm">
-          <h3>覆蓋「{{ travelTitle }}」？</h3>
-          <p>這會把「{{ travelTitle }}」目前的所有行程資料換成貼上的內容，且無法復原，確定要繼續嗎？</p>
-          <p v-if="error" class="drawer-error">{{ error }}</p>
-        </div>
-        <div class="drawer-actions">
-          <button class="btn-secondary" type="button" :disabled="busy" @click="confirming = false">返回</button>
-          <button class="btn-danger" type="button" :disabled="busy" @click="doImport(pendingPayload)">{{ busy ? '覆蓋中…' : '確定覆蓋' }}</button>
-        </div>
-      </template>
-    </section>
-  </div>
+        <template v-else>
+          <div class="drawer-body drawer-confirm">
+            <h3>覆蓋「{{ travelTitle }}」？</h3>
+            <p>這會把「{{ travelTitle }}」目前的所有行程資料換成貼上的內容，且無法復原，確定要繼續嗎？</p>
+            <p v-if="error" class="drawer-error">{{ error }}</p>
+          </div>
+          <div class="drawer-actions">
+            <button class="btn-secondary" type="button" :disabled="busy" @click="confirming = false">返回</button>
+            <button class="btn-danger" type="button" :disabled="busy" @click="doImport(pendingPayload)">{{ busy ? '覆蓋中…' : '確定覆蓋' }}</button>
+          </div>
+        </template>
+      </section>
+    </div>
+  </Transition>
 </template>
 
 <style scoped>

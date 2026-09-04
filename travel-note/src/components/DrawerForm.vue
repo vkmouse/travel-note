@@ -169,10 +169,11 @@ function submit() {
 }
 
 const sheetRef = ref<HTMLElement | null>(null)
-const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('cancel'))
+const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('cancel'), computed(() => props.open))
 </script>
 
 <template>
+  <Transition name="sheet">
   <div v-if="open" class="drawer-overlay" @click.self="emit('cancel')">
     <section
       ref="sheetRef"
@@ -266,6 +267,7 @@ const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(
       </div>
     </section>
   </div>
+  </Transition>
 </template>
 
 <style scoped>

@@ -123,14 +123,38 @@ svg {
   height: var(--sheet-h-compact);
 }
 
+/* 開啟時面板由下往上滑入、背景同時淡入；關閉時（不論是點背景、按取消或拖曳收合）反向播放 */
+.sheet-enter-active,
+.sheet-leave-active {
+  transition: background-color .25s ease;
+}
+.sheet-enter-active .drawer-sheet,
+.sheet-leave-active .drawer-sheet {
+  transition: transform .25s ease;
+}
+.drawer-overlay.sheet-enter-from,
+.drawer-overlay.sheet-leave-to {
+  background: rgba(22, 34, 58, 0);
+}
+.sheet-enter-from .drawer-sheet,
+.sheet-leave-to .drawer-sheet {
+  transform: translateY(100%);
+}
+
+/* 原本握把只有視覺尺寸那麼大可以點，手機上很難精準拖到；
+   改用 padding 撐開一個至少 44px 高的觸控區，握把本身視覺大小不變 */
 .drawer-top {
   flex: 0 0 auto;
   touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 0;
 }
 .drawer-handle {
   width: 36px;
   height: 4px;
-  margin: 10px auto 2px;
   border-radius: var(--r-pill);
   background: var(--line);
 }

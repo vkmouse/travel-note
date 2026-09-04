@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import Icon from './Icon.vue'
 import { useMyInvitations } from '../composables/useMyInvitations'
 import { useTravels } from '../composables/useTravels'
@@ -46,10 +46,11 @@ async function decline(id: string) {
 }
 
 const sheetRef = ref<HTMLElement | null>(null)
-const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('close'))
+const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('close'), computed(() => props.open))
 </script>
 
 <template>
+  <Transition name="sheet">
   <div v-if="open" class="drawer-overlay" @click.self="emit('close')">
     <section
       ref="sheetRef"
@@ -87,6 +88,7 @@ const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(
       </div>
     </section>
   </div>
+  </Transition>
 </template>
 
 <style scoped>

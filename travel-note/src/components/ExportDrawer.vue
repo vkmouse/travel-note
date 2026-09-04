@@ -43,38 +43,40 @@ async function copy() {
 }
 
 const sheetRef = ref<HTMLElement | null>(null)
-const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('close'))
+const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('close'), computed(() => props.open))
 </script>
 
 <template>
-  <div v-if="open" class="drawer-overlay" @click.self="emit('close')">
-    <section
-      ref="sheetRef"
-      class="drawer-sheet"
-      role="dialog"
-      aria-modal="true"
-      aria-label="匯出旅行"
-      :style="dragging ? { transform: `translateY(${dragY}px)`, transition: 'none' } : {}"
-    >
-      <div class="drawer-top" @touchstart="onTouchStart" @touchmove.prevent="onTouchMove" @touchend="onTouchEnd"><div class="drawer-handle"></div></div>
-      <div class="drawer-body">
-        <h3 class="drawer-title">匯出「{{ travelTitle }}」</h3>
-        <p class="hint">複製下面這段文字傳給朋友，對方可以用「匯入旅行」建立成一趟新的旅行；如果想覆蓋更新一趟旅行的內容，改到那趟旅行的 header 用「匯入取代」貼上。不會包含成員與邀請紀錄。</p>
+  <Transition name="sheet">
+    <div v-if="open" class="drawer-overlay" @click.self="emit('close')">
+      <section
+        ref="sheetRef"
+        class="drawer-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label="匯出旅行"
+        :style="dragging ? { transform: `translateY(${dragY}px)`, transition: 'none' } : {}"
+      >
+        <div class="drawer-top" @touchstart="onTouchStart" @touchmove.prevent="onTouchMove" @touchend="onTouchEnd"><div class="drawer-handle"></div></div>
+        <div class="drawer-body">
+          <h3 class="drawer-title">匯出「{{ travelTitle }}」</h3>
+          <p class="hint">複製下面這段文字傳給朋友，對方可以用「匯入旅行」建立成一趟新的旅行；如果想覆蓋更新一趟旅行的內容，改到那趟旅行的 header 用「匯入取代」貼上。不會包含成員與邀請紀錄。</p>
 
-        <p v-if="loading" class="state-msg">匯出中...</p>
-        <p v-else-if="loadError" class="state-msg error">{{ loadError }}</p>
-        <template v-else>
-          <textarea ref="textareaRef" class="export-text" readonly rows="10" :value="text" @click="($event.target as HTMLTextAreaElement).select()"></textarea>
-          <button class="copy-btn" type="button" @click="copy">
-            <Icon :name="copied ? 'check' : 'copy'" :size="15" />{{ copied ? '已複製' : '複製文字' }}
-          </button>
-        </template>
-      </div>
-      <div class="drawer-actions">
-        <button class="btn-secondary" type="button" @click="emit('close')">關閉</button>
-      </div>
-    </section>
-  </div>
+          <p v-if="loading" class="state-msg">匯出中...</p>
+          <p v-else-if="loadError" class="state-msg error">{{ loadError }}</p>
+          <template v-else>
+            <textarea ref="textareaRef" class="export-text" readonly rows="10" :value="text" @click="($event.target as HTMLTextAreaElement).select()"></textarea>
+            <button class="copy-btn" type="button" @click="copy">
+              <Icon :name="copied ? 'check' : 'copy'" :size="15" />{{ copied ? '已複製' : '複製文字' }}
+            </button>
+          </template>
+        </div>
+        <div class="drawer-actions">
+          <button class="btn-secondary" type="button" @click="emit('close')">關閉</button>
+        </div>
+      </section>
+    </div>
+  </Transition>
 </template>
 
 <style scoped>
