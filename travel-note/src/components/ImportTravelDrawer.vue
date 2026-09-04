@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { importTravel } from '../services/api'
+import { useSheetDrag } from '../composables/useSheetDrag'
 
 const props = withDefaults(
   defineProps<{
@@ -66,12 +67,22 @@ async function doImport(payload: unknown) {
     busy.value = false
   }
 }
+
+const sheetRef = ref<HTMLElement | null>(null)
+const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('close'))
 </script>
 
 <template>
   <div v-if="open" class="drawer-overlay" @click.self="emit('close')">
-    <section class="drawer-sheet" role="dialog" aria-modal="true" :aria-label="mode === 'replace' ? '匯入取代這趟旅行' : '匯入旅行'">
-      <div class="drawer-top"><div class="drawer-handle"></div></div>
+    <section
+      ref="sheetRef"
+      class="drawer-sheet"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="mode === 'replace' ? '匯入取代這趟旅行' : '匯入旅行'"
+      :style="dragging ? { transform: `translateY(${dragY}px)`, transition: 'none' } : {}"
+    >
+      <div class="drawer-top" @touchstart="onTouchStart" @touchmove.prevent="onTouchMove" @touchend="onTouchEnd"><div class="drawer-handle"></div></div>
 
       <template v-if="!confirming">
         <div class="drawer-body">

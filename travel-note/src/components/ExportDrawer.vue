@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import Icon from './Icon.vue'
 import { exportTravel } from '../services/api'
+import { useSheetDrag } from '../composables/useSheetDrag'
 
 const props = defineProps<{ open: boolean; travelId: string | null; travelTitle: string }>()
 const emit = defineEmits<{ close: [] }>()
@@ -40,12 +41,22 @@ async function copy() {
     copied.value = false
   }
 }
+
+const sheetRef = ref<HTMLElement | null>(null)
+const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('close'))
 </script>
 
 <template>
   <div v-if="open" class="drawer-overlay" @click.self="emit('close')">
-    <section class="drawer-sheet" role="dialog" aria-modal="true" aria-label="匯出旅行">
-      <div class="drawer-top"><div class="drawer-handle"></div></div>
+    <section
+      ref="sheetRef"
+      class="drawer-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-label="匯出旅行"
+      :style="dragging ? { transform: `translateY(${dragY}px)`, transition: 'none' } : {}"
+    >
+      <div class="drawer-top" @touchstart="onTouchStart" @touchmove.prevent="onTouchMove" @touchend="onTouchEnd"><div class="drawer-handle"></div></div>
       <div class="drawer-body">
         <h3 class="drawer-title">匯出「{{ travelTitle }}」</h3>
         <p class="hint">複製下面這段文字傳給朋友，對方可以用「匯入旅行」建立成一趟新的旅行；如果想覆蓋更新一趟旅行的內容，改到那趟旅行的 header 用「匯入取代」貼上。不會包含成員與邀請紀錄。</p>

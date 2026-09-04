@@ -4,6 +4,7 @@ import { CATEGORY_ICON } from '../icons'
 import Icon from './Icon.vue'
 import CalendarPicker from './CalendarPicker.vue'
 import { resolvePlaceFromMapUrl } from '../utils/googleMaps'
+import { useSheetDrag } from '../composables/useSheetDrag'
 
 export interface DrawerField {
   key: string
@@ -166,12 +167,23 @@ function submit() {
   error.value = ''
   emit('save', { ...form.value })
 }
+
+const sheetRef = ref<HTMLElement | null>(null)
+const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('cancel'))
 </script>
 
 <template>
   <div v-if="open" class="drawer-overlay" @click.self="emit('cancel')">
-    <section class="drawer-sheet" :class="`drawer-sheet--${size}`" role="dialog" aria-modal="true" :aria-label="title">
-      <div class="drawer-top">
+    <section
+      ref="sheetRef"
+      class="drawer-sheet"
+      :class="`drawer-sheet--${size}`"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="title"
+      :style="dragging ? { transform: `translateY(${dragY}px)`, transition: 'none' } : {}"
+    >
+      <div class="drawer-top" @touchstart="onTouchStart" @touchmove.prevent="onTouchMove" @touchend="onTouchEnd">
         <div class="drawer-handle"></div>
       </div>
       <div class="drawer-body">

@@ -114,6 +114,7 @@ svg {
   background: var(--card);
   border-radius: var(--r-lg) var(--r-lg) 0 0;
   box-shadow: var(--shadow-sheet);
+  transition: transform .25s ease;
 }
 .drawer-overlay--elevated .drawer-sheet {
   box-shadow: var(--shadow-elevated);
@@ -124,6 +125,7 @@ svg {
 
 .drawer-top {
   flex: 0 0 auto;
+  touch-action: none;
 }
 .drawer-handle {
   width: 36px;

@@ -4,6 +4,7 @@ import Icon from './Icon.vue'
 import DrawerConfirm from './DrawerConfirm.vue'
 import { fetchTravelMembers, inviteMember, declineInvitation } from '../services/api'
 import { useCurrentUser } from '../composables/useCurrentUser'
+import { useSheetDrag } from '../composables/useSheetDrag'
 import type { TravelMembers } from '../types'
 
 const props = defineProps<{ open: boolean; travelId: string | null; isOwner: boolean }>()
@@ -100,12 +101,22 @@ async function confirmRemove() {
     confirmBusy.value = false
   }
 }
+
+const sheetRef = ref<HTMLElement | null>(null)
+const { dragY, dragging, onTouchStart, onTouchMove, onTouchEnd } = useSheetDrag(sheetRef, () => emit('close'))
 </script>
 
 <template>
   <div v-if="open" class="drawer-overlay" @click.self="emit('close')">
-    <section class="drawer-sheet" role="dialog" aria-modal="true" aria-label="成員與邀請">
-      <div class="drawer-top">
+    <section
+      ref="sheetRef"
+      class="drawer-sheet"
+      role="dialog"
+      aria-modal="true"
+      aria-label="成員與邀請"
+      :style="dragging ? { transform: `translateY(${dragY}px)`, transition: 'none' } : {}"
+    >
+      <div class="drawer-top" @touchstart="onTouchStart" @touchmove.prevent="onTouchMove" @touchend="onTouchEnd">
         <div class="drawer-handle"></div>
       </div>
       <div class="drawer-body">
