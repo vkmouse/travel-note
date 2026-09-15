@@ -472,3 +472,27 @@ textarea.f-input {
   background: var(--slate);
   border-color: var(--slate);
 }
+
+/* 資訊/清單/行程共用的拖曳排序把手＋動畫 */
+.row-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 9px 4px 9px 9px;
+  margin: -3px 0 0 -9px;
+  border: 0;
+  background: none;
+  color: var(--icon-muted);
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: grab;
+}
+.row-drag-handle:active {
+  cursor: grabbing;
+  color: var(--ink);
+}
+.reorder-move {
+  transition: transform 220ms cubic-bezier(.2, .8, .2, 1);
+}

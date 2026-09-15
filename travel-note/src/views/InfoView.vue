@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useInfo } from '../composables/useInfo'
 import { useCurrentTravel } from '../composables/useCurrentTravel'
 import { useCategoryFilter } from '../composables/useCategoryFilter'
@@ -13,7 +13,8 @@ import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import RoutePlanningBar from '../components/RoutePlanningBar.vue'
-import { createInfo, deleteInfo, patchInfoChecked, updateInfo } from '../services/api'
+import { createInfo, deleteInfo, patchInfoChecked, patchInfoOrder, updateInfo } from '../services/api'
+import type { InfoItem } from '../types'
 
 const { currentTravelId } = useCurrentTravel()
 const { items, loading, error, refresh } = useInfo(currentTravelId)
@@ -34,6 +35,125 @@ const { categories, activeCategory, filtered, grouped } = useCategoryFilter(sort
 
 // 「全選」的範圍：只有目前這個分類（含「全部」時就是整頁）、且有連結的項目
 const selectableIds = computed(() => filtered.value.filter((i) => i.map_url).map((i) => routeId(i.id)))
+
+// ---- 拖曳排序（限制在同一個分類群組內） ----
+const dragId = ref<string | null>(null)
+const dragTranslate = ref(0)
+const reorderError = ref('')
+
+// workingList 依「分類分組後」攤平：同分類的項目在陣列中一定連續，
+// 拖曳時只在同分類的連續區段內搬動，不會影響其他分類的順序。
+const workingList = ref<InfoItem[]>([])
+watch(
+  grouped,
+  (groups) => {
+    if (!dragId.value) workingList.value = groups.flatMap((g) => g.rows)
+  },
+  { immediate: true, deep: true },
+)
+const workingGrouped = computed(() => {
+  const cats = [...new Set(workingList.value.map((i) => i.category))]
+  return cats.map((cat) => ({ category: cat, rows: workingList.value.filter((i) => i.category === cat) }))
+})
+
+const itemEls = new Map<string, HTMLElement>()
+function setItemRef(id: string, el: Element | null) {
+  if (el instanceof HTMLElement) itemEls.set(id, el)
+  else itemEls.delete(id)
+}
+let dragStartY = 0
+let dragItemHeight = 0
+let dragBaseline: InfoItem[] = []
+let dragPointerId: number | null = null
+
+function onHandlePointerDown(e: PointerEvent, id: string) {
+  const el = itemEls.get(id)
+  if (!el) return
+  e.preventDefault()
+  dragId.value = id
+  dragTranslate.value = 0
+  dragStartY = e.clientY
+  dragItemHeight = el.offsetHeight + 9 // 9px = .info-row 的 margin-bottom
+  dragBaseline = [...workingList.value]
+  dragPointerId = e.pointerId
+  el.setPointerCapture(e.pointerId)
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerup', onPointerUp)
+  window.addEventListener('pointercancel', onPointerUp)
+}
+
+function onPointerMove(e: PointerEvent) {
+  if (!dragId.value || dragItemHeight <= 0) return
+  const delta = e.clientY - dragStartY
+  dragTranslate.value = delta
+
+  const dragged = dragBaseline.find((i) => i.id === dragId.value)
+  if (!dragged) return
+  const category = dragged.category
+  const catIndices = dragBaseline.reduce<number[]>((arr, it, i) => {
+    if (it.category === category) arr.push(i)
+    return arr
+  }, [])
+  const originIndex = dragBaseline.findIndex((i) => i.id === dragId.value)
+  const originPos = catIndices.indexOf(originIndex)
+  const targetPos = Math.max(0, Math.min(catIndices.length - 1, originPos + Math.round(delta / dragItemHeight)))
+  const targetIndex = catIndices[targetPos]
+  const currentIndex = workingList.value.findIndex((i) => i.id === dragId.value)
+  if (currentIndex !== -1 && targetIndex !== undefined && currentIndex !== targetIndex) {
+    const list = [...workingList.value]
+    const [moved] = list.splice(currentIndex, 1)
+    if (moved) {
+      list.splice(targetIndex, 0, moved)
+      workingList.value = list
+    }
+  }
+}
+
+async function onPointerUp() {
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', onPointerUp)
+  window.removeEventListener('pointercancel', onPointerUp)
+  const id = dragId.value
+  const baseline = dragBaseline
+  const finalList = workingList.value
+  const el = id ? itemEls.get(id) : null
+  if (el && dragPointerId !== null) {
+    try { el.releasePointerCapture(dragPointerId) } catch { /* 已經釋放就略過 */ }
+  }
+  dragPointerId = null
+  dragId.value = null
+  dragTranslate.value = 0
+  dragItemHeight = 0
+  if (!id || !currentTravelId.value) return
+  const dragged = baseline.find((i) => i.id === id)
+  if (dragged) await persistReorder(finalList, baseline, dragged.category)
+}
+
+// 只重新分配「同一個分類」原本就有的 order 數值（依大小排序後照新順序套用），
+// 不會動到其他分類的 order，換過去也不會跟別的項目撞號
+async function persistReorder(newList: InfoItem[], oldList: InfoItem[], category: string) {
+  const travelId = currentTravelId.value
+  if (!travelId) return
+  const oldCatItems = oldList.filter((i) => i.category === category)
+  const newCatItems = newList.filter((i) => i.category === category)
+  const orderValues = oldCatItems.map((i) => i.order).sort((a, b) => a - b)
+  const updates: { id: string; order: number }[] = []
+  newCatItems.forEach((item, idx) => {
+    const order = orderValues[idx]
+    if (order !== undefined && order !== item.order) updates.push({ id: item.id, order })
+  })
+  if (!updates.length) return
+  reorderError.value = ''
+  try {
+    for (const u of updates) {
+      await patchInfoOrder(travelId, u.id, u.order)
+    }
+    await refresh()
+  } catch (e) {
+    reorderError.value = e instanceof Error ? e.message : String(e)
+    await refresh() // 失敗就重新抓一次，畫面對回伺服器上真正的順序
+  }
+}
 </script>
 
 <template>
@@ -56,22 +176,35 @@ const selectableIds = computed(() => filtered.value.filter((i) => i.map_url).map
       <p v-if="planningRoute" class="route-hint">點選卡片加入路線・已選 {{ selectedCount }} 個地點</p>
 
       <template v-if="filtered.length">
-        <template v-for="group in grouped" :key="group.category">
+        <template v-for="group in workingGrouped" :key="group.category">
           <div class="section-label">
             <Icon :name="CATEGORY_ICON[group.category] || 'tag'" :size="14" />
             {{ group.category }}
           </div>
+          <TransitionGroup tag="div" name="reorder" class="group-list">
           <div
             v-for="item in group.rows"
             :key="item.id"
+            :ref="(el) => setItemRef(item.id, el as Element | null)"
             class="info-row"
             :class="{
               'info-row--select-mode': planningRoute && item.map_url,
               'info-row--selected': planningRoute && item.map_url && isSelected(routeId(item.id)),
               'info-row--route-disabled': planningRoute && !item.map_url,
+              'info-row--dragging': dragId === item.id,
             }"
+            :style="dragId === item.id ? { transform: `translateY(${dragTranslate}px)` } : undefined"
             @click="planningRoute && item.map_url && toggleRoute(routeId(item.id))"
           >
+            <button
+              v-if="!planningRoute"
+              type="button"
+              class="row-drag-handle"
+              aria-label="拖曳調整順序"
+              @pointerdown="onHandlePointerDown($event, item.id)"
+            >
+              <Icon name="grip" :size="15" />
+            </button>
             <button v-if="!(planningRoute && item.map_url)" class="check-dot-btn" aria-label="切換完成狀態" @click.stop="toggle(item)">
               <div class="check-dot" :class="{ checked: item.is_checked }">
                 <Icon v-if="item.is_checked" name="check" :size="15" :stroke-width="2.6" />
@@ -104,6 +237,7 @@ const selectableIds = computed(() => filtered.value.filter((i) => i.map_url).map
               <button class="icon-btn danger" aria-label="刪除" @click.stop="openDelete(item.id)"><Icon name="trash" :size="17" /></button>
             </div>
           </div>
+          </TransitionGroup>
         </template>
       </template>
       <div v-else class="empty">
@@ -113,6 +247,7 @@ const selectableIds = computed(() => filtered.value.filter((i) => i.map_url).map
     </template>
     <RoutePlanningBar :allow-entry="true" :selectable-ids="selectableIds" @add="openCreate" />
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
+    <p v-if="reorderError" class="state-msg error">{{ reorderError }}</p>
     <DrawerForm :open="formOpen" :title="`${editingId ? '編輯' : '新增'}．常用資訊`" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
   </section>
@@ -164,5 +299,15 @@ const selectableIds = computed(() => filtered.value.filter((i) => i.map_url).map
   margin: 0 0 14px;
   font-size: 12px;
   color: var(--muted);
+}
+.group-list {
+  position: relative;
+}
+.info-row--dragging {
+  position: relative;
+  z-index: 5;
+  transition: none !important;
+  box-shadow: 0 10px 22px rgba(22, 34, 58, .28);
+  border-color: var(--brass);
 }
 </style>

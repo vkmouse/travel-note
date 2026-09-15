@@ -176,6 +176,7 @@ export function fetchChecklist(travelId: string): Promise<ChecklistItem[]> {
 
 export function createItinerary(travelId: string, payload: Omit<ItineraryItem, 'id' | 'order'>) { return mutate<ItineraryItem>(`/api/travels/${travelId}/itinerary`, 'POST', payload, '新增行程失敗') }
 export function updateItinerary(travelId: string, id: string, payload: Partial<Omit<ItineraryItem, 'id' | 'order'>>) { return mutate<ItineraryItem>(`/api/travels/${travelId}/itinerary/${id}`, 'PUT', payload, '更新行程失敗') }
+export function patchItineraryOrder(travelId: string, id: string, order: number) { return mutate<ItineraryItem>(`/api/travels/${travelId}/itinerary/${id}`, 'PATCH', { order }, '調整順序失敗') }
 export function deleteItinerary(travelId: string, id: string) { return mutate<{ id: string }>(`/api/travels/${travelId}/itinerary/${id}`, 'DELETE', undefined, '刪除行程失敗') }
 
 export function createDocument(travelId: string, payload: Omit<DocumentItem, 'id' | 'order'>) { return mutate<DocumentItem>(`/api/travels/${travelId}/documents`, 'POST', payload, '新增文件失敗') }
@@ -186,9 +187,11 @@ export function deleteDocument(travelId: string, id: string) { return mutate<{ i
 export function createInfo(travelId: string, payload: Omit<InfoItem, 'id' | 'order' | 'is_checked'>) { return mutate<InfoItem>(`/api/travels/${travelId}/info`, 'POST', payload, '新增資訊失敗') }
 export function updateInfo(travelId: string, id: string, payload: Partial<Omit<InfoItem, 'id' | 'order' | 'is_checked'>>) { return mutate<InfoItem>(`/api/travels/${travelId}/info/${id}`, 'PUT', payload, '更新資訊失敗') }
 export function patchInfoChecked(travelId: string, id: string, is_checked: boolean) { return mutate<InfoItem>(`/api/travels/${travelId}/info/${id}`, 'PATCH', { is_checked }, '更新資訊狀態失敗') }
+export function patchInfoOrder(travelId: string, id: string, order: number) { return mutate<InfoItem>(`/api/travels/${travelId}/info/${id}`, 'PATCH', { order }, '調整順序失敗') }
 export function deleteInfo(travelId: string, id: string) { return mutate<{ id: string }>(`/api/travels/${travelId}/info/${id}`, 'DELETE', undefined, '刪除資訊失敗') }
 
 export function createChecklist(travelId: string, payload: Omit<ChecklistItem, 'id' | 'order' | 'is_checked'>) { return mutate<ChecklistItem>(`/api/travels/${travelId}/checklist`, 'POST', payload, '新增清單失敗') }
 export function updateChecklist(travelId: string, id: string, payload: Partial<Omit<ChecklistItem, 'id' | 'order' | 'is_checked'>>) { return mutate<ChecklistItem>(`/api/travels/${travelId}/checklist/${id}`, 'PUT', payload, '更新清單失敗') }
 export function patchChecklistChecked(travelId: string, id: string, is_checked: boolean) { return mutate<ChecklistItem>(`/api/travels/${travelId}/checklist/${id}`, 'PATCH', { is_checked }, '更新清單狀態失敗') }
+export function patchChecklistOrder(travelId: string, id: string, order: number) { return mutate<ChecklistItem>(`/api/travels/${travelId}/checklist/${id}`, 'PATCH', { order }, '調整順序失敗') }
 export function deleteChecklist(travelId: string, id: string) { return mutate<{ id: string }>(`/api/travels/${travelId}/checklist/${id}`, 'DELETE', undefined, '刪除清單失敗') }

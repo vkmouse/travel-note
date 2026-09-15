@@ -38,6 +38,7 @@ export const onRequestPut: PagesFunction<Env, any, TravelAuthContext> = async (c
   }
 }
 
+// 支援兩種用途各自獨立傳一個欄位：勾選狀態切換（is_checked）或拖曳排序（order）。
 export const onRequestPatch: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
   const { DB } = context.env
   const travelId = context.data.travelId
@@ -45,21 +46,30 @@ export const onRequestPatch: PagesFunction<Env, any, TravelAuthContext> = async 
 
   try {
     const body = await context.request.json<Record<string, unknown>>()
-    if (typeof body.is_checked !== 'boolean') return jsonError('is_checked 必須是 boolean', 400)
+    const hasIsChecked = typeof body.is_checked === 'boolean'
+    const hasOrder = typeof body.order === 'number' && Number.isFinite(body.order)
+    if (!hasIsChecked && !hasOrder) return jsonError('is_checked 必須是 boolean，或 order 必須是數字', 400)
+
     const existing = await DB.prepare(`SELECT * FROM checklist WHERE id = ? AND travel_id = ?`)
       .bind(id, travelId)
       .first<Record<string, unknown>>()
     if (!existing) return jsonError('找不到這筆清單項目', 404)
-    await DB.prepare(`UPDATE checklist SET is_checked = ? WHERE id = ? AND travel_id = ?`)
-      .bind(body.is_checked ? 1 : 0, id, travelId)
-      .run()
+
+    if (hasOrder) {
+      await DB.prepare(`UPDATE checklist SET "order" = ? WHERE id = ? AND travel_id = ?`).bind(body.order, id, travelId).run()
+    } else {
+      await DB.prepare(`UPDATE checklist SET is_checked = ? WHERE id = ? AND travel_id = ?`)
+        .bind(body.is_checked ? 1 : 0, id, travelId)
+        .run()
+    }
+
     return jsonOk({
       id,
-      order: existing.order,
+      order: hasOrder ? body.order : existing.order,
       category: existing.category,
       title: existing.title,
       note: existing.note,
-      is_checked: body.is_checked,
+      is_checked: hasOrder ? Boolean(existing.is_checked) : body.is_checked,
     })
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'patch failed', 500)

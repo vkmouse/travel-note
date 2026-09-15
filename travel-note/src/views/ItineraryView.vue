@@ -10,7 +10,8 @@ import NoteText from '../components/NoteText.vue'
 import DrawerForm, { type DrawerField } from '../components/DrawerForm.vue'
 import DrawerConfirm from '../components/DrawerConfirm.vue'
 import RoutePlanningBar from '../components/RoutePlanningBar.vue'
-import { createItinerary, deleteItinerary, updateItinerary } from '../services/api'
+import { createItinerary, deleteItinerary, patchItineraryOrder, updateItinerary } from '../services/api'
+import type { ItineraryItem } from '../types'
 
 const route = useRoute()
 const router = useRouter()
@@ -74,6 +75,113 @@ const dayItems = computed(() =>
 // 「全選」的範圍：只有目前這一天、且有地圖連結的項目
 const selectableIds = computed(() => dayItems.value.filter((it) => it.map_url).map((it) => routeId(it.id)))
 
+// ---- 拖曳排序（限制在目前選取的這一天內） ----
+const dragId = ref<string | null>(null)
+const dragTranslate = ref(0)
+const reorderError = ref('')
+
+// workingList 是畫面上實際渲染、拖曳中會即時重排的清單；沒有在拖曳時就跟著 dayItems 走。
+const workingList = ref<ItineraryItem[]>([])
+watch(
+  dayItems,
+  (list) => {
+    if (!dragId.value) workingList.value = [...list]
+  },
+  { immediate: true },
+)
+
+const itemEls = new Map<string, HTMLElement>()
+function setItemRef(id: string, el: Element | null) {
+  if (el instanceof HTMLElement) itemEls.set(id, el)
+  else itemEls.delete(id)
+}
+let dragStartY = 0
+let dragItemHeight = 0
+let dragBaseline: ItineraryItem[] = []
+let dragPointerId: number | null = null
+
+function onHandlePointerDown(e: PointerEvent, id: string) {
+  if (planningRoute.value) return
+  const el = itemEls.get(id)
+  if (!el) return
+  e.preventDefault()
+  dragId.value = id
+  dragTranslate.value = 0
+  dragStartY = e.clientY
+  dragItemHeight = el.offsetHeight + 18 // 18px = .tl-item 的 padding-bottom
+  dragBaseline = [...dayItems.value]
+  dragPointerId = e.pointerId
+  el.setPointerCapture(e.pointerId)
+  window.addEventListener('pointermove', onPointerMove)
+  window.addEventListener('pointerup', onPointerUp)
+  window.addEventListener('pointercancel', onPointerUp)
+}
+
+function onPointerMove(e: PointerEvent) {
+  if (!dragId.value || dragItemHeight <= 0) return
+  const delta = e.clientY - dragStartY
+  dragTranslate.value = delta
+
+  const originIndex = dragBaseline.findIndex((it) => it.id === dragId.value)
+  if (originIndex === -1) return
+  const targetIndex = Math.max(
+    0,
+    Math.min(dragBaseline.length - 1, originIndex + Math.round(delta / dragItemHeight)),
+  )
+  const currentIndex = workingList.value.findIndex((it) => it.id === dragId.value)
+  if (currentIndex !== -1 && currentIndex !== targetIndex) {
+    const list = [...workingList.value]
+    const [moved] = list.splice(currentIndex, 1)
+    if (moved) {
+      list.splice(targetIndex, 0, moved)
+      workingList.value = list
+    }
+  }
+}
+
+async function onPointerUp() {
+  window.removeEventListener('pointermove', onPointerMove)
+  window.removeEventListener('pointerup', onPointerUp)
+  window.removeEventListener('pointercancel', onPointerUp)
+  const id = dragId.value
+  const baseline = dragBaseline
+  const finalList = workingList.value
+  const el = id ? itemEls.get(id) : null
+  if (el && dragPointerId !== null) {
+    try { el.releasePointerCapture(dragPointerId) } catch { /* 已經釋放就略過 */ }
+  }
+  dragPointerId = null
+  dragId.value = null
+  dragTranslate.value = 0
+  dragItemHeight = 0
+  if (!id || !currentTravelId.value) return
+  await persistReorder(finalList, baseline)
+}
+
+// 只重新分配「這一天」原本就有的 order 數值（依大小排序後照新順序套用），
+// 不會動到其他天的 order，換過去也不會跟別的項目撞號
+async function persistReorder(newList: ItineraryItem[], oldList: ItineraryItem[]) {
+  const travelId = currentTravelId.value
+  if (!travelId) return
+  const orderValues = [...oldList].map((it) => it.order).sort((a, b) => a - b)
+  const updates: { id: string; order: number }[] = []
+  newList.forEach((it, idx) => {
+    const order = orderValues[idx]
+    if (order !== undefined && order !== it.order) updates.push({ id: it.id, order })
+  })
+  if (!updates.length) return
+  reorderError.value = ''
+  try {
+    for (const u of updates) {
+      await patchItineraryOrder(travelId, u.id, u.order)
+    }
+    await refresh()
+  } catch (e) {
+    reorderError.value = e instanceof Error ? e.message : String(e)
+    await refresh() // 失敗就重新抓一次，畫面對回伺服器上真正的順序
+  }
+}
+
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
 function weekday(d: string) {
   return '週' + WEEKDAYS[new Date(d).getDay()]
@@ -103,11 +211,18 @@ function dayNum(d: string) {
 
       <p v-if="planningRoute" class="route-hint">點選卡片加入路線・已選 {{ selectedCount }} 個地點</p>
 
-      <div v-if="dayItems.length" class="timeline">
-        <div v-for="(it, idx) in dayItems" :key="it.id" class="tl-item">
+      <TransitionGroup v-if="dayItems.length" tag="div" name="reorder" class="timeline">
+        <div
+          v-for="(it, idx) in workingList"
+          :key="it.id"
+          :ref="(el) => setItemRef(it.id, el as Element | null)"
+          class="tl-item"
+          :class="{ 'tl-item--dragging': dragId === it.id }"
+          :style="dragId === it.id ? { transform: `translateY(${dragTranslate}px)` } : undefined"
+        >
           <div class="tl-rail">
             <div class="tl-dot"></div>
-            <div v-if="idx !== dayItems.length - 1" class="tl-line"></div>
+            <div v-if="idx !== workingList.length - 1" class="tl-line"></div>
           </div>
           <div style="flex: 1">
             <div class="tl-time">{{ it.time || '整天' }}</div>
@@ -123,6 +238,14 @@ function dayNum(d: string) {
               <div class="tl-card-head">
                 <p class="tl-title">{{ it.title }}</p>
                 <div v-if="!(planningRoute && it.map_url)" class="card-actions">
+                  <button
+                    type="button"
+                    class="icon-btn drag-handle"
+                    aria-label="拖曳調整順序"
+                    @pointerdown.stop="onHandlePointerDown($event, it.id)"
+                  >
+                    <Icon name="grip" :size="16" />
+                  </button>
                   <button class="icon-btn" aria-label="編輯" @click="openEdit(it.id)"><Icon name="edit" :size="17" /></button>
                   <button class="icon-btn danger" aria-label="刪除" @click="openDelete(it.id)"><Icon name="trash" :size="17" /></button>
                 </div>
@@ -149,7 +272,7 @@ function dayNum(d: string) {
             </div>
           </div>
         </div>
-      </div>
+      </TransitionGroup>
       <div v-else class="empty">
         <p>{{ days.length ? '這天還沒有安排行程' : '尚未新增任何行程' }}</p>
         <button class="empty-add-btn" @click="openCreate"><Icon name="plus" :size="14" />新增一筆</button>
@@ -157,6 +280,7 @@ function dayNum(d: string) {
     </template>
     <RoutePlanningBar :allow-entry="true" :selectable-ids="selectableIds" @add="openCreate" />
     <p v-if="actionError" class="state-msg error">{{ actionError }}</p>
+    <p v-if="reorderError" class="state-msg error">{{ reorderError }}</p>
     <DrawerForm :open="formOpen" title="行程" size="lg" :fields="fields" :initial-values="formValues" :busy="busy" @cancel="formOpen = false" @save="save" />
     <DrawerConfirm :open="deleteOpen" :title="`刪除「${items.find((i) => i.id === deletingId)?.title ?? '這一項'}」`" :busy="busy" @cancel="deleteOpen = false" @confirm="confirmDelete" />
   </section>
@@ -224,6 +348,23 @@ function dayNum(d: string) {
 }
 .tl-item:last-child {
   padding-bottom: 0;
+}
+.tl-item--dragging {
+  z-index: 5;
+  transition: none !important;
+}
+.tl-item--dragging .tl-card {
+  box-shadow: 0 10px 22px rgba(22, 34, 58, .28);
+  border-color: var(--brass);
+}
+.icon-btn.drag-handle {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: grab;
+}
+.icon-btn.drag-handle:active {
+  cursor: grabbing;
 }
 .tl-rail {
   display: flex;
