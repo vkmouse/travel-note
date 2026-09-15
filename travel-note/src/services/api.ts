@@ -180,6 +180,7 @@ export function deleteItinerary(travelId: string, id: string) { return mutate<{ 
 
 export function createDocument(travelId: string, payload: Omit<DocumentItem, 'id' | 'order'>) { return mutate<DocumentItem>(`/api/travels/${travelId}/documents`, 'POST', payload, '新增文件失敗') }
 export function updateDocument(travelId: string, id: string, payload: Partial<Omit<DocumentItem, 'id' | 'order'>>) { return mutate<DocumentItem>(`/api/travels/${travelId}/documents/${id}`, 'PUT', payload, '更新文件失敗') }
+export function patchDocumentOrder(travelId: string, id: string, order: number) { return mutate<DocumentItem>(`/api/travels/${travelId}/documents/${id}`, 'PATCH', { order }, '調整順序失敗') }
 export function deleteDocument(travelId: string, id: string) { return mutate<{ id: string }>(`/api/travels/${travelId}/documents/${id}`, 'DELETE', undefined, '刪除文件失敗') }
 
 export function createInfo(travelId: string, payload: Omit<InfoItem, 'id' | 'order' | 'is_checked'>) { return mutate<InfoItem>(`/api/travels/${travelId}/info`, 'POST', payload, '新增資訊失敗') }

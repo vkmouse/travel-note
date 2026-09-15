@@ -225,7 +225,9 @@ header {
 main {
   flex: 1;
   overflow-y: auto;
-  padding: 18px 16px calc(102px + var(--safe-bottom));
+  /* 右下角浮動按鈕（RoutePlanningBar）固定在 bottom: 94px 高 52px，
+     頂邊距螢幕底部 146px，這裡留到 168px 確保清單最後一項不會被蓋住、按不到 */
+  padding: 18px 16px calc(168px + var(--safe-bottom));
 }
 
 nav {

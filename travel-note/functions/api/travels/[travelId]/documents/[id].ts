@@ -36,6 +36,33 @@ export const onRequestPut: PagesFunction<Env, any, TravelAuthContext> = async (c
   }
 }
 
+// 拖曳排序用：只改 order，不動其他欄位。前端只在同一個分類篩選範圍內重新分配 order 值，
+// 所以這裡單純信任傳進來的數字，不用重新計算其他項目的 order。
+export const onRequestPatch: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
+  const { DB } = context.env
+  const travelId = context.data.travelId
+  const id = context.params.id as string
+
+  try {
+    const body = await context.request.json<Record<string, unknown>>()
+    if (typeof body.order !== 'number' || !Number.isFinite(body.order)) {
+      return jsonError('order 必須是數字', 400)
+    }
+    const existing = await DB.prepare(`SELECT * FROM documents WHERE id = ? AND travel_id = ?`)
+      .bind(id, travelId)
+      .first<Record<string, unknown>>()
+    if (!existing) return jsonError('找不到這筆文件', 404)
+
+    await DB.prepare(`UPDATE documents SET "order" = ? WHERE id = ? AND travel_id = ?`)
+      .bind(body.order, id, travelId)
+      .run()
+
+    return jsonOk({ ...existing, order: body.order })
+  } catch (err) {
+    return jsonError(err instanceof Error ? err.message : 'patch failed', 500)
+  }
+}
+
 export const onRequestDelete: PagesFunction<Env, any, TravelAuthContext> = async (context) => {
   const { DB } = context.env
   const travelId = context.data.travelId
