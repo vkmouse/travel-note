@@ -8,6 +8,7 @@ import DrawerConfirm from './DrawerConfirm.vue'
 import ImportTravelDrawer from './ImportTravelDrawer.vue'
 import { createTravel, deleteTravel, loadSampleTravel, updateTravel } from '../services/api'
 
+const props = withDefaults(defineProps<{ showHidden?: boolean }>(), { showHidden: false })
 const emit = defineEmits<{ picked: [id: string] }>()
 
 const { travels, loading, error, refresh } = useTravels()
@@ -28,6 +29,9 @@ const fields: DrawerField[] = [
   { key: 'date_start', label: '開始日期', type: 'date', width: 'half' },
   { key: 'date_end', label: '結束日期', type: 'date', width: 'half' },
 ]
+
+// 隱藏旅行只在顯示層過濾（後端仍會回傳，權限不受影響）；空狀態也用過濾後的清單判斷，避免洩漏
+const visibleTravels = computed(() => travels.value.filter((t) => !t.is_hidden || props.showHidden))
 
 const formValues = computed(() => travels.value.find((t) => t.id === editingId.value) ?? { title: '' })
 
@@ -108,9 +112,9 @@ function fmtRange(t: { date_start: string | null; date_end: string | null }) {
     <p v-if="loading" class="state-msg">載入中...</p>
     <p v-else-if="error" class="state-msg error">{{ error }}</p>
     <template v-else>
-      <div v-if="travels.length" class="travel-list">
+      <div v-if="visibleTravels.length" class="travel-list">
         <div
-          v-for="t in travels"
+          v-for="t in visibleTravels"
           :key="t.id"
           class="travel-card"
           :class="{ active: t.id === currentTravelId }"
@@ -124,6 +128,7 @@ function fmtRange(t: { date_start: string | null; date_end: string | null }) {
             <p class="travel-card-title">
               {{ t.title }}
               <span v-if="!t.is_owner" class="shared-tag"><Icon name="users" :size="10" />共享</span>
+              <span v-if="t.is_hidden" class="shared-tag">隱藏</span>
             </p>
             <p class="travel-card-range">{{ fmtRange(t) }}</p>
           </div>

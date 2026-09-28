@@ -13,6 +13,7 @@ export interface Travel {
   date_end: string | null
   order: number
   is_owner: boolean
+  is_hidden?: boolean
 }
 
 export interface ItineraryItem {

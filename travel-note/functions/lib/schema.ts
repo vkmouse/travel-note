@@ -73,6 +73,10 @@ export const CREATE_TABLE_STATEMENTS = [
     accepted_at TEXT,
     UNIQUE (travel_id, user_id)
   )`,
+  `CREATE TABLE IF NOT EXISTS hidden_travels (
+    travel_id TEXT PRIMARY KEY,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  )`,
   `CREATE INDEX IF NOT EXISTS travels_user_order_idx ON travels(user_id, "order")`,
   `CREATE INDEX IF NOT EXISTS travel_members_user_status_idx ON travel_members(user_id, status)`,
   `CREATE INDEX IF NOT EXISTS itinerary_travel_date_idx ON itinerary(travel_id, date, "order")`,

@@ -27,17 +27,27 @@ export const onRequestGet: PagesFunction<Env, any, AuthContext> = async (context
   try {
     // 清單要同時列出自己擁有的旅行，以及被邀請且已接受的旅行，用 is_owner 讓前端分辨
     const { results } = await DB.prepare(
-      `SELECT id, title, date_start, date_end, "order", created_at, 1 AS is_owner
-       FROM travels WHERE user_id = ?
+      `SELECT t.id, t.title, t.date_start, t.date_end, t."order", t.created_at, 1 AS is_owner,
+              h.travel_id IS NOT NULL AS is_hidden
+       FROM travels t
+       LEFT JOIN hidden_travels h ON h.travel_id = t.id
+       WHERE t.user_id = ?
        UNION
-       SELECT t.id, t.title, t.date_start, t.date_end, t."order", t.created_at, 0 AS is_owner
+       SELECT t.id, t.title, t.date_start, t.date_end, t."order", t.created_at, 0 AS is_owner,
+              h.travel_id IS NOT NULL AS is_hidden
        FROM travels t
        JOIN travel_members m ON m.travel_id = t.id
+       LEFT JOIN hidden_travels h ON h.travel_id = t.id
        WHERE m.user_id = ? AND m.status = 'accepted'
        ORDER BY "order" ASC`,
     ).bind(userId, userId).all()
 
-    return jsonOk((results ?? []).map((row: Record<string, unknown>) => ({ ...row, is_owner: Boolean(row.is_owner) })))
+    // is_hidden 只是給前端決定顯示與否的標記（後門隱藏），不影響任何權限判斷
+    return jsonOk((results ?? []).map((row: Record<string, unknown>) => ({
+      ...row,
+      is_owner: Boolean(row.is_owner),
+      is_hidden: Boolean(row.is_hidden),
+    })))
   } catch (err) {
     return jsonError(err instanceof Error ? err.message : 'query failed', 500)
   }

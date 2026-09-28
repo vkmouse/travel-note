@@ -4,8 +4,12 @@ import TravelListPanel from '../components/TravelListPanel.vue'
 import MyInvitationsDrawer from '../components/MyInvitationsDrawer.vue'
 import Icon from '../components/Icon.vue'
 import { useMyInvitations } from '../composables/useMyInvitations'
+import { useSecretTap } from '../composables/useSecretTap'
 
 const invitationsOpen = ref(false)
+// 隱藏旅行的後門：連點標題 5 次（2 秒內）切換顯示；不持久化，離開選擇頁就會重置
+const showHidden = ref(false)
+const { tap: secretTap } = useSecretTap(() => { showHidden.value = !showHidden.value })
 const { invitations: myInvitations } = useMyInvitations()
 </script>
 
@@ -13,7 +17,7 @@ const { invitations: myInvitations } = useMyInvitations()
   <div class="picker">
     <header class="picker-header">
       <div class="picker-header-top">
-        <p class="picker-brand">旅遊手札 Travel Note</p>
+        <p class="picker-brand" @click="secretTap">旅遊手札 Travel Note</p>
         <button class="picker-invite-btn" type="button" aria-label="我的邀請" @click="invitationsOpen = true">
           <Icon name="mail" :size="18" />
           <span v-if="myInvitations.length" class="picker-invite-badge">{{ myInvitations.length }}</span>
@@ -22,7 +26,7 @@ const { invitations: myInvitations } = useMyInvitations()
       <p class="picker-sub">選擇一趟旅行開始，或建立新的旅行</p>
     </header>
     <div class="picker-body">
-      <TravelListPanel />
+      <TravelListPanel :show-hidden="showHidden" />
     </div>
     <MyInvitationsDrawer :open="invitationsOpen" @close="invitationsOpen = false" />
   </div>
@@ -55,6 +59,9 @@ const { invitations: myInvitations } = useMyInvitations()
   font-weight: 700;
   margin: 0;
   letter-spacing: -0.01em;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
 }
 .picker-invite-btn {
   position: relative;
