@@ -5,9 +5,9 @@ export function useSecretTap(onTrigger: () => void, count = 5, windowMs = 2000) 
 
   function tap() {
     const now = Date.now()
-    taps.push(now)
-    if (taps.length > count) taps = taps.slice(-count)
-    if (taps.length === count && now - taps[0] <= windowMs) {
+    // 滑動視窗：只保留 windowMs 內的點擊，數量夠了就觸發
+    taps = [...taps.filter((t) => now - t <= windowMs), now]
+    if (taps.length >= count) {
       taps = []
       onTrigger()
     }
